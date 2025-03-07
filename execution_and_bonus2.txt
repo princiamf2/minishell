@@ -1,0 +1,140 @@
+
+Plan pour l'Exécution des Commandes dans Minishell
+
+------------------------------------------------------------
+1. Objectif
+------------------------------------------------------------
+L'objectif de cette partie est d'exécuter une commande saisie par l'utilisateur. Pour cela, il faut :
+    - Rechercher l'exécutable correspondant à la commande en utilisant la variable d'environnement PATH.
+    - Créer un processus enfant avec fork() pour exécuter la commande via execve().
+    - Attendre la fin du processus enfant (avec wait ou waitpid) dans le processus parent.
+
+------------------------------------------------------------
+2. Recherche de l'Exécutable
+------------------------------------------------------------
+Méthodologie :
+    - Utiliser getenv("PATH") pour récupérer la liste des répertoires dans lesquels chercher l'exécutable.
+    - Découper la chaîne PATH en utilisant ':' comme séparateur (tu peux utiliser ta propre version de ft_split).
+    - Pour chaque répertoire, concaténer le chemin avec le nom de la commande et vérifier avec access() si l'exécutable existe et est exécutable.
+    - Si la commande contient déjà un '/', on supposera qu'il s'agit d'un chemin absolu ou relatif et on ne fera pas de recherche dans PATH.
+
+Exemple de fonction :
+------------------------------------------------------------
+char *find_executable(const char *cmd) {
+    char *path_env = getenv("PATH");
+    if (!path_env)
+        return NULL;
+    // On duplique la variable PATH pour pouvoir la tokeniser
+    char *paths = strdup(path_env);
+    if (!paths)
+        return NULL;
+    char *token = strtok(paths, ":");
+    while (token) {
+        // Allouer assez d'espace pour "répertoire + '/' + commande + '\0'"
+        char *full_path = malloc(strlen(token) + strlen(cmd) + 2);
+        if (!full_path) {
+            free(paths);
+            return NULL;
+        }
+        sprintf(full_path, "%s/%s", token, cmd);
+        if (access(full_path, X_OK) == 0) {
+            free(paths);
+            return full_path;  // Executable trouvé
+        }
+        free(full_path);
+        token = strtok(NULL, ":");
+    }
+    free(paths);
+    return NULL;
+}
+------------------------------------------------------------
+
+------------------------------------------------------------
+3. Création du Processus et Exécution
+------------------------------------------------------------
+Méthodologie :
+    - Utiliser fork() pour créer un processus enfant.
+    - Dans l'enfant, appeler execve() avec :
+         • Le chemin complet de l'exécutable.
+         • Un tableau d'arguments (le premier élément est généralement le nom de la commande).
+         • L'environnement (habituellement passé en argument à main() sous forme de char **envp).
+    - Dans le processus parent, utiliser waitpid() pour attendre la fin de l'exécution de l'enfant.
+    - Gérer les erreurs (échec de fork(), d'execve(), etc.) et afficher les messages d'erreur appropriés.
+
+Exemple de fonction d'exécution :
+------------------------------------------------------------
+int execute_command(char **args, char **envp) {
+    if (!args || !args[0])
+        return 1;
+
+    char *exec_path;
+    // Si la commande contient un '/', on l'utilise directement
+    if (strchr(args[0], '/') != NULL) {
+        exec_path = strdup(args[0]);
+    } else {
+        exec_path = find_executable(args[0]);
+    }
+
+    if (!exec_path) {
+        fprintf(stderr, "minishell: %s: command not found\n", args[0]);
+        return 127;  // Code classique pour commande non trouvée
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        free(exec_path);
+        return 1;
+    }
+    if (pid == 0) {
+        // Processus enfant : exécuter la commande
+        if (execve(exec_path, args, envp) == -1) {
+            perror("execve");
+            exit(1);
+        }
+    }
+    // Processus parent : attendre que l'enfant se termine
+    int status;
+    waitpid(pid, &status, 0);
+    free(exec_path);
+    return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
+}
+------------------------------------------------------------
+
+------------------------------------------------------------
+4. Exemple de Programme Principal
+------------------------------------------------------------
+Ce programme illustre comment utiliser la fonction d'exécution pour lancer une commande simple (exemple : "ls -l").
+
+------------------------------------------------------------
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+char *find_executable(const char *cmd);
+int execute_command(char **args, char **envp);
+
+int main(int argc, char **argv, char **envp) {
+    // Exemple : commande "ls -l"
+    char *cmd_args[] = {"ls", "-l", NULL};
+    int exit_code = execute_command(cmd_args, envp);
+    printf("La commande s'est terminée avec le code : %d\n", exit_code);
+    return exit_code;
+}
+------------------------------------------------------------
+
+------------------------------------------------------------
+5. Remarques et Conseils
+------------------------------------------------------------
+- Assure-toi que ton programme gère correctement la mémoire (libérer les allocations).
+- Pour les commandes contenant un '/', n'oublie pas de traiter le cas où il s'agit déjà d'un chemin (absolu ou relatif).
+- Teste la fonction execute_command avec différentes commandes pour t'assurer de son bon fonctionnement.
+- N'oublie pas de gérer les erreurs et d'afficher des messages clairs en cas d'échec.
+- Ce module sera intégré par la suite avec le parsing et la gestion des builtins. Assure-toi que l'interface (tableau de tokens) est compatible entre les modules.
+
+------------------------------------------------------------
+Fin du document
+
+Utilise ce plan et ces exemples comme base pour implémenter l'exécution des commandes dans ton Minishell. N'hésite pas à tester chaque étape et à me demander si tu as besoin de précisions supplémentaires !

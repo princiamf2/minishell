@@ -1,0 +1,194 @@
+Plan pour l'Exécution et les Bonus dans Minishell
+
+------------------------------------------------------------
+1. Exécution des Commandes
+------------------------------------------------------------
+Objectif :
+- Lancer une commande en recherchant son exécutable dans le PATH et en utilisant fork/execve.
+- Gérer l'exécution en attente avec wait/waitpid.
+
+Méthodologie :
+- Récupérer la variable d'environnement PATH via getenv("PATH").
+- Découper PATH en plusieurs répertoires (utilise ta version de ft_split si besoin).
+- Parcourir ces répertoires et vérifier l'existence de l'exécutable avec access().
+- Une fois trouvé, lancer la commande dans un processus enfant via fork() puis execve().
+- Dans le processus parent, attendre la fin de l'exécution.
+
+Exemple de Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+
+char *find_executable(char *cmd) {
+    char *path_env = getenv("PATH");
+    if (!path_env)
+        return NULL;
+    char *paths = strdup(path_env);
+    char *token = strtok(paths, ":");
+    while (token) {
+        char full_path[1024];
+        snprintf(full_path, sizeof(full_path), "%s/%s", token, cmd);
+        if (access(full_path, X_OK) == 0) {
+            free(paths);
+            return strdup(full_path);
+        }
+        token = strtok(NULL, ":");
+    }
+    free(paths);
+    return NULL;
+}
+
+int main() {
+    char *cmd = "ls";
+    char *args[] = {cmd, "-l", NULL};
+    char *executable = find_executable(cmd);
+    if (!executable) {
+        printf("Commande introuvable\n");
+        return 1;
+    }
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Processus enfant
+        execve(executable, args, NULL);
+        perror("execve");
+        exit(1);
+    } else if (pid > 0) {
+        // Processus parent
+        wait(NULL);
+    } else {
+        perror("fork");
+    }
+    free(executable);
+    return 0;
+}
+
+------------------------------------------------------------
+2. Gestion des Redirections et des Pipes
+------------------------------------------------------------
+Redirections :
+- Identifier dans les tokens les opérateurs de redirection (<, >, <<, >>).
+- Ouvrir le fichier concerné avec open() et rediriger les file descriptors via dup2().
+- Exemple : rediriger STDOUT sur un fichier :
+    - fd = open("outfile", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    - dup2(fd, STDOUT_FILENO);
+    - execve(...);
+
+Pipes :
+- Créer un tube avec pipe() pour relier la sortie d'une commande à l'entrée d'une autre.
+- Utiliser fork() pour créer deux processus, l'un redirigeant son STDOUT vers l'écriture du pipe, l'autre redirigeant son STDIN depuis la lecture du pipe.
+
+Exemple de Code pour un Pipe :
+
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+
+int main() {
+    int fd[2];
+    if (pipe(fd) == -1) {
+        perror("pipe");
+        exit(1);
+    }
+    pid_t pid1 = fork();
+    if (pid1 == 0) {
+        // Enfant 1 : écrit dans le pipe
+        close(fd[0]); // ferme la lecture
+        dup2(fd[1], STDOUT_FILENO);
+        execlp("ls", "ls", "-l", NULL);
+        perror("execlp");
+        exit(1);
+    }
+    pid_t pid2 = fork();
+    if (pid2 == 0) {
+        // Enfant 2 : lit depuis le pipe
+        close(fd[1]); // ferme l'écriture
+        dup2(fd[0], STDIN_FILENO);
+        execlp("grep", "grep", "pattern", NULL);
+        perror("execlp");
+        exit(1);
+    }
+    // Parent ferme les deux extrémités et attend
+    close(fd[0]);
+    close(fd[1]);
+    wait(NULL);
+    wait(NULL);
+    return 0;
+}
+
+------------------------------------------------------------
+3. Expansion des Wildcards (Bonus)
+------------------------------------------------------------
+Objectif :
+- Permettre l'expansion des motifs contenant le caractère '*' pour correspondre aux fichiers du répertoire courant.
+
+Méthodologie :
+- Parcourir le répertoire courant à l'aide de opendir(), readdir() et closedir().
+- Implémenter une fonction de matching, par exemple nommée ft_wildcmp, qui compare un pattern (contenant des '*') avec un nom de fichier.
+- Remplacer, lors du parsing, les tokens contenant '*' par la liste des fichiers correspondants.
+
+Exemple de Fonction de Matching :
+
+#include <stdio.h>
+#include <dirent.h>
+
+int ft_wildcmp(const char *pattern, const char *str) {
+    if (!*pattern)
+        return (!*str);
+    if (*pattern == '*')
+        return (ft_wildcmp(pattern + 1, str) || (*str && ft_wildcmp(pattern, str + 1)));
+    if (*pattern == *str)
+        return ft_wildcmp(pattern + 1, str + 1);
+    return 0;
+}
+
+void expand_wildcard(const char *pattern) {
+    DIR *d = opendir(".");
+    if (!d) {
+        perror("opendir");
+        return;
+    }
+    struct dirent *dir;
+    while ((dir = readdir(d)) != NULL) {
+        if (ft_wildcmp(pattern, dir->d_name))
+            printf("Match trouvé : %s\n", dir->d_name);
+    }
+    closedir(d);
+}
+
+int main() {
+    // Exemple : chercher tous les fichiers
+    expand_wildcard("*");
+    return 0;
+}
+
+------------------------------------------------------------
+4. Gestion des Opérateurs Logiques et des Parenthèses (Bonus)
+------------------------------------------------------------
+Objectif :
+- Permettre l'interprétation de commandes avec des opérateurs logiques (&& et ||) et des priorités via les parenthèses.
+
+Méthodologie :
+- Étendre le module de parsing pour identifier les opérateurs logiques et les parenthèses.
+- Construire une structure de données (par exemple, un arbre syntaxique) qui représente l'ordre d'exécution des commandes.
+- Lors de l'exécution, évaluer les nœuds de cet arbre en respectant les opérateurs (exécuter la commande suivante uniquement si la précédente a réussi pour &&, etc.).
+
+Remarques :
+- Cette partie nécessite une analyse syntaxique plus poussée et dépend fortement de la manière dont tu as structuré ton parsing.
+- Il est conseillé de terminer d'abord la base fonctionnelle (commandes simples, redirections, pipes) avant d'intégrer cette gestion avancée.
+
+------------------------------------------------------------
+5. Prochaines Étapes
+------------------------------------------------------------
+- Intégrer ces modules progressivement et tester chaque fonctionnalité individuellement.
+- Vérifier la gestion de la mémoire et le respect des normes de l'école 42.
+- Commencer par la partie d'exécution de commandes, puis ajouter les redirections/pipes, ensuite l'expansion des wildcards, et enfin la gestion des opérateurs logiques et parenthèses.
+
+------------------------------------------------------------
+Fin du document
+
+Utilise ce fichier comme guide pour implémenter et tester les différentes parties de ton Minishell. N'hésite pas à revenir sur chaque section pour affiner et adapter le code selon tes besoins et contraintes.
+

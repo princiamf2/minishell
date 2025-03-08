@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/05 19:00:50 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/08 20:28:05 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,31 +62,36 @@ int execute_command(char **args, char **envp)
 
 	if (!args || !args[0])
 		return (1);
-	if (ft_strchr(args[0], '/') != NULL)
-		exec_path = ft_strdup(args[0]);
+	if (is_builtins(args[0]))
+		return (execute_builtin(args, envp));
 	else
-		exec_path = find_excutable(args[0]);
-	if (!exec_path)
 	{
-		ft_putstr_fd("commande pas trouver\n", 2);
-		return (127);
-	}
-	pid = fork();
-	if (pid < 0)
-	{
-		perror("fork");
-		free(exec_path);
-		return (1);
-	}
-	if (pid == 0)
-	{
-		if (execve(exec_path, args, envp) == -1)
+		if (ft_strchr(args[0], '/') != NULL)
+			exec_path = ft_strdup(args[0]);
+		else
+			exec_path = find_excutable(args[0]);
+		if (!exec_path)
 		{
-			perror("execve");
-			exit(1);
+			ft_putstr_fd("commande pas trouver\n", 2);
+			return (127);
 		}
+		pid = fork();
+		if (pid < 0)
+		{
+			perror("fork");
+			free(exec_path);
+			return (1);
+		}
+		if (pid == 0)
+		{
+			if (execve(exec_path, args, envp) == -1)
+			{
+				perror("execve");
+				exit(1);
+			}
+		}
+		waitpid(pid, &status, 0);
+		free(exec_path);
+		return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
 	}
-	waitpid(pid, &status, 0);
-	free(exec_path);
-	return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
 }

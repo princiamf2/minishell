@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builting2.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 17:36:34 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/07 17:37:46 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/08 20:28:52 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ int builtin_env(char **env)
 	return (0);
 }
 
-int builtin_cd(char **args, char ***env)
+int builtin_cd(char **args)
 {
 	char *path;
 

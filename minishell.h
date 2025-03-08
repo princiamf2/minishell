@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/07 17:40:52 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/08 20:29:20 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ int					builtin_pwd(char **args);
 int					builtin_export(char **args, char ***env);
 int					builtin_unset(char **args, char ***env);
 int					builtin_env(char **env);
-int					builtin_cd(char **args, char ***env);
+int					builtin_cd(char **args);
 int					find_env_index(char **env, char *var);
 char				**add_env_variable(char **env, char *new_var);
 int					find_env_index_unset(char **env, char *var);

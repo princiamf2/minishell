@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builting.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/07 17:37:40 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/08 20:34:31 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ int is_builtins(char *cmd)
 int execute_builtin(char **args, char **envp)
 {
 	if (!ft_strcmp(args[0], "cd"))
-		return (builtin_cd(args, &envp));
+		return (builtin_cd(args));
 	if (!ft_strcmp(args[0], "echo"))
 		return (builtin_echo(args));
 	if (!ft_strcmp(args[0], "pwd"))
@@ -78,6 +78,7 @@ int builtin_pwd(char **args)
 	}
 	ft_putstr_fd(path, 1);
 	ft_putchar_fd('\n', 1);
+	return (0);
 }
 
 int builtin_export(char **args, char ***env)
@@ -87,7 +88,7 @@ int builtin_export(char **args, char ***env)
 	char	*eq;
 
 	if (!args[1])
-		return (builtin_env(env));
+		return (builtin_env(*env));
 	i = 1;
 	while (args[i])
 	{

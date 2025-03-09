@@ -6,7 +6,7 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/09 00:59:19 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/09 03:41:51 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,7 @@ typedef struct s_token
 char				*ft_strtok(char *s, const char *delim);
 char				*find_excutable(const char *cmd);
 int					execute_command(char **args, char **envp);
-int					ft_strcmp(char *s1, char *s2);
+int					ft_strcmp(char *s1, const char *s2);
 int					is_builtins(char *cmd);
 int					execute_builtin(char **args, char **envp);
 int					builtin_echo(char **args);
@@ -73,6 +73,11 @@ int					find_env_index_unset(char **env, char *var);
 int					handle_input_redirection(t_command *cmd);
 int					handle_output_trunc_redirection(t_command *cmd);
 int					handle_output_append_redirection(t_command *cmd);
+int					handle_heredoc(t_command *cmd);
 int					handle_redirection(t_command *cmd);
+char				*generate_tmp_name(void);
+int					open_tmp_heredoc_file(char **tmp_name);
+int					read_and_write_heredoc(int fd, const char *delimiter);
+int					finalize_heredoc(int fd, char *tmp_name);
 
 #endif

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 17:34:08 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/07 17:29:28 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/09 03:05:56 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ char	*ft_strtok(char *s, const char *delim)
 	return (token);
 }
 
-int ft_strcmp(char *s1, char *s2)
+int ft_strcmp(char *s1, const char *s2)
 {
 	int i;
 

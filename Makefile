@@ -1,5 +1,6 @@
 NAME = minishell
-SRCS = execute.c utils.c main.c builting.c builting2.c
+SRCS = execute.c utils.c main.c builting.c builting2.c /
+		redirection.c utils2.c
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror
 LIBFT_DIR = ./libft

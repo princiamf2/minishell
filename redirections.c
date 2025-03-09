@@ -6,7 +6,7 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
-/*   Updated: 2025/03/09 01:40:24 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/09 03:37:58 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,39 +80,28 @@ int handle_output_append_redirection(t_command *cmd)
 
 int handle_heredoc(t_command *cmd)
 {
-	char	*line;
-	int		fd;
-	char	tmp[] = "/tmp/minishell_heredocXXXXXX";
-
-	if (!cmd->heredoc)
-		return (0);
-	fd = mkstemp(tmp);
-	if (fd < 0)
-	{
-		perror("mkstemp");
-		return (-1);
-	}
-	unlink(tmp);
-	while (1)
-	{
-		line = readline("> ");
-		if (!line || ft_strcmp(line, cmd->input) == 0)
-		{
-			free(line);
-			break;
-		}
-		write(fd, line, ft_strlen(line));
-		write(fd, "\n", 1);
-		free(line);
-	}
-	if (dup2(fd, STDIN_FILENO) < 0)
-	{
-		perror("dup2 heredoc");
-		close(fd);
-		return (-1);
-	}
-	close(fd);
-	return (0);
+	int fd;
+    char *tmp_name;
+    int ret;
+    
+    if (!cmd->heredoc)
+        return (0);
+    fd = open_tmp_heredoc_file(&tmp_name);
+    if (fd < 0)
+    {
+        perror("open heredoc");
+        free(tmp_name);
+        return (-1);
+    }
+    ret = read_and_write_heredoc(fd, cmd->input);
+    if (ret < 0)
+    {
+        close(fd);
+        free(tmp_name);
+        return (-1);
+    }
+    ret = finalize_heredoc(fd, tmp_name);
+    return (ret);
 }
 
 int handle_redirection(t_command *cmd)

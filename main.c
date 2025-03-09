@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/05 19:27:32 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/08 20:42:36 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,6 @@ int main(int argc, char **argv, char **envp)
         line = readline("minishell> ");
         if (!line)
             break;
-        if (ft_strcmp("exit", line) == 0)
-			break;
         if (*line)
             add_history(line);
         args = ft_split(line, ' ');

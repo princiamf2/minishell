@@ -6,7 +6,7 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/08 20:29:20 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/09 00:59:19 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ typedef struct s_command
 	char			*input;
 	char			*output;
 	int				append;
+	int				heredoc;
 }					t_command;
 
 typedef enum e_token_type
@@ -69,5 +70,9 @@ int					builtin_cd(char **args);
 int					find_env_index(char **env, char *var);
 char				**add_env_variable(char **env, char *new_var);
 int					find_env_index_unset(char **env, char *var);
+int					handle_input_redirection(t_command *cmd);
+int					handle_output_trunc_redirection(t_command *cmd);
+int					handle_output_append_redirection(t_command *cmd);
+int					handle_redirection(t_command *cmd);
 
 #endif

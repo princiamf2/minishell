@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/09 03:41:51 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/10 17:46:33 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 # include <readline/history.h>
 # include <readline/readline.h>
 # include <signal.h>
+# include <stdbool.h>
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
@@ -42,18 +43,50 @@ typedef struct s_command
 
 typedef enum e_token_type
 {
-	TOKEN_WORD,
-	TOKEN_OPERATOR,
-	TOKEN_REDIRECTION,
-	TOKEN_WILDCARD,
-
+	WORD,
+	PIPE,
+	SEMICOLON,
+	AND_IF,
+	OR_IF,
+	REDIR_IN,
+	REDIR_OUT,
+	REDIR_APPEND,
+	HEREDOC,
+	PAREN_OPEN,
+	PAREN_CLOSE
 }					t_token_type;
 
 typedef struct s_token
 {
 	char			*value;
 	t_token_type	type;
+	bool			quoted;
+	struct s_token	*next;
 }					t_token;
+
+typedef struct s_env
+{
+	char			*key;
+	char			*value;
+	struct s_env	*next;
+}					t_env;
+
+typedef struct s_buffer
+{
+	char			*str;
+	size_t			index;
+	size_t			cap;
+}					t_buffer;
+
+typedef struct s_token_state
+{
+	const char		*input;
+	size_t			i;
+	bool			in_single;
+	bool			in_double;
+	char			*buffer;
+	size_t			buf_index;
+}					t_token_state;
 
 char				*ft_strtok(char *s, const char *delim);
 char				*find_excutable(const char *cmd);
@@ -79,5 +112,15 @@ char				*generate_tmp_name(void);
 int					open_tmp_heredoc_file(char **tmp_name);
 int					read_and_write_heredoc(int fd, const char *delimiter);
 int					finalize_heredoc(int fd, char *tmp_name);
+t_token				*create_token(const char *str);
+bool				is_whitespace(char c);
+size_t				skip_whitespace(const char *input, size_t i);
+void				handle_dollar_question(const char *input, size_t *i,
+						char *buffer, size_t *index);
+void				handle_dollar_variable(const char *input, size_t *i,
+						char *buffer, size_t *index);
+char				*collect_token(t_token_state *state);
+void				process_token_char(t_token_state *state);
+t_token				*lexer(const char *input);
 
 #endif

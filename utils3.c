@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils3.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:21:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/10 17:18:48 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/13 12:06:33 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ void	handle_dollar_question(const char *input, size_t *i, t_buffer *buf, int exi
 {
 	char *num_str;
 
+	(void)input;
 	num_str = ft_itoa(exit_status);
 	if (!num_str)
 		return;

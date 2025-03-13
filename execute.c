@@ -6,11 +6,14 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/08 20:28:05 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 00:54:48 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "libft/libft.h"
 #include "minishell.h"
+#include <sys/wait.h>
+#include <unistd.h>
 
 char	*find_excutable(const char *cmd)
 {
@@ -54,44 +57,49 @@ char	*find_excutable(const char *cmd)
 	return (NULL);
 }
 
-int execute_command(char **args, char **envp)
+int execute_command(t_command *cmd, char **envp)
 {
 	char *exec_path;
 	int status;
 	pid_t pid;
 
-	if (!args || !args[0])
+	if (handle_redirection(cmd) < 0)
 		return (1);
-	if (is_builtins(args[0]))
-		return (execute_builtin(args, envp));
+	if (is_builtins(cmd->args[0]))
+		return (execute_builtin(cmd->args, envp));
+	if (ft_strchr(cmd->args[0], '/') != NULL)
+		exec_path = ft_strdup(cmd->args[0]);
 	else
+		exec_path = find_excutable(cmd->args[0]);
+	if (!exec_path)
 	{
-		if (ft_strchr(args[0], '/') != NULL)
-			exec_path = ft_strdup(args[0]);
-		else
-			exec_path = find_excutable(args[0]);
-		if (!exec_path)
-		{
-			ft_putstr_fd("commande pas trouver\n", 2);
-			return (127);
-		}
-		pid = fork();
-		if (pid < 0)
-		{
-			perror("fork");
-			free(exec_path);
-			return (1);
-		}
-		if (pid == 0)
-		{
-			if (execve(exec_path, args, envp) == -1)
-			{
-				perror("execve");
-				exit(1);
-			}
-		}
-		waitpid(pid, &status, 0);
-		free(exec_path);
-		return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
+		ft_putstr_fd("commande pas trouver\n", 2);
+		return (127);
 	}
+	pid = fork();
+	if (pid < 0)
+	{
+		perror("fork");
+		free(exec_path);
+		return (1);
+	}
+	if (pid == 0)
+	{
+		if (execve(exec_path, cmd->args, envp) == -1)
+		{
+			perror("execve");
+			exit(1);
+		}
+	}
+	waitpid(pid, &status, 0);
+	free(exec_path);
+	return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
+}
+
+int execute_full_command(t_command *cmd, t_env *env, char **envp)
+{
+    if (cmd->next_pipe)
+        return execute_pipeline(cmd, env);
+    else
+        return execute_command(cmd, envp);
 }

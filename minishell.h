@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/11 17:16:07 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/13 12:53:23 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,13 +35,6 @@
 # include <termios.h>
 # include <unistd.h>
 
-typedef struct s_redir
-{
-	t_token_type		type;
-	char				*target;
-	bool				delim_quoted;
-	struct s_redir		*next;
-}						t_redir;
 
 typedef struct s_command
 {
@@ -71,6 +64,14 @@ typedef enum e_token_type
 	PAREN_CLOSE
 }						t_token_type;
 
+typedef struct s_redir
+{
+	t_token_type		type;
+	char				*target;
+	bool				delim_quoted;
+	struct s_redir		*next;
+}						t_redir;
+
 typedef struct s_token
 {
 	char				*value;
@@ -99,8 +100,7 @@ typedef struct s_token_state
 	size_t				i;
 	bool				in_single;
 	bool				in_double;
-	char				*buffer;
-	size_t				buf_index;
+	t_buffer			*buffer;
 }						t_token_state;
 
 typedef struct s_andor
@@ -116,10 +116,27 @@ typedef struct s_cmdlist
 	struct s_cmdlist	*next;
 }						t_cmdlist;
 
+typedef struct s_pipe_info
+{
+    int n;
+    int *pipes;
+} t_pipe_info;
+
+
+typedef struct  s_data
+{
+	t_env	*env;
+	t_cmdlist *cmdlist;
+	t_token *tokens;
+	t_pipe_info *pipe;
+	char *input;
+	int exit_status;
+} t_data;
+
 char					*ft_strtok(char *s, const char *delim);
 char					*find_excutable(const char *cmd);
-int						execute_command(char **args, char **envp);
-int						ft_strcmp(char *s1, const char *s2);
+int						execute_command(t_command *cmd, char **envp);
+int						ft_strcmp(const char *s1, const char *s2);
 int						is_builtins(char *cmd);
 int						execute_builtin(char **args, char **envp);
 int						builtin_echo(char **args);
@@ -144,11 +161,11 @@ t_token					*create_token(const char *str);
 bool					is_whitespace(char c);
 size_t					skip_whitespace(const char *input, size_t i);
 void					handle_dollar_question(const char *input, size_t *i,
-							char *buffer, size_t *index);
+							t_buffer *buf, int exit_status);
 void					handle_dollar_variable(const char *input, size_t *i,
-							char *buffer, size_t *index);
-char					*collect_token(t_token_state *state);
-void					process_token_char(t_token_state *state);
+							t_buffer *buf, t_env *env);
+char					*collect_token(t_token_state *state, int exit_status, t_env *env);
+void					process_token_char(t_token_state *state, int exit_status, t_env *env);
 t_token					*lexer(const char *input);
 t_cmdlist				*build_subshell_ast(t_token *tokens);
 t_token					*extract_subshell_tokens(t_token **cur);
@@ -174,5 +191,35 @@ char					**read_directory_matches(const char *dirpath,
 							const char *pat);
 void					append_line(char **content, size_t *len, size_t *cap,
 							const char *line);
+t_env *env_init(char **envp);
+char *env_get(t_env *env, const char *key);
+void env_set(t_env **env, const char *key, const char *val);
+void	env_unset(t_env **env, const char *key);
+char **env_to_array(t_env *env);
+t_token *collect_tokens_until_closing(t_token **cur);
+bool is_redirection(t_token *token);
+t_command *parse_command(t_token **cur);
+t_command *parse_subshell(t_token **cur);
+char *ft_strncpy(char *dest, const char *src, size_t n);
+bool match_pattern(const char *pattern, const char *str);
+int add_match(char ***matches, size_t *count, size_t *capacity, const char *dirpath, const char *filename);
+char *build_fullpath(const char *dirpath, const char *filename);
+char *ft_strcpy(char *dest, const char *src);
+void handle_sigint(int sig);
+void handle_sigquit(int sig);
+bool validate_tokens_adv(t_token *tokens);
+void free_tokens(t_token *tokens);
+int	execute_cmdlist(t_cmdlist *commands, t_env *env);
+int execute_andor(t_andor *list, t_env *env);
+t_command *parse_pipeline(t_token **cur);
+void free_cmdlist(t_cmdlist *list);
+void free_andor(t_andor *andor);
+void free_command(t_command *cmd);
+void free_env(t_env *env);
+int count_commands(t_command *pipeline);
+int execute_pipeline(t_command *pipeline, t_env *env);
+int execute_full_command(t_command *cmd, t_env *env, char **envp);
+void append_to_buffer(t_buffer *buf, const char *s);
+void print_env_array(char **env_array);
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 17:34:08 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/09 03:05:56 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 01:45:28 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ char	*ft_strtok(char *s, const char *delim)
 	return (token);
 }
 
-int ft_strcmp(char *s1, const char *s2)
+int ft_strcmp(const char *s1, const char *s2)
 {
 	int i;
 

@@ -3,13 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   lexer.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:06:56 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/10 17:44:58 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/13 12:41:23 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "libft/libft.h"
 #include "minishell.h"
 
 t_token *create_token(const char *str)
@@ -49,33 +50,23 @@ t_token *create_token(const char *str)
 	return token;
 }
 
-char *collect_token(t_token_state *state)
+char *collect_token(t_token_state *state, int exit_status, t_env *env)
 {
-	char buf[4096];
-	size_t idx;
-
-	state->in_single = false;
-	state->in_double = false;
-	if (!state->in_single && !state->in_double && (state->input[state->i] == '(' || state->input[state->i] == ')'))
-	{
-		buf[idx++] = state->input[state->i];
-		state->i++;
-		buf[idx] = '\0';
-		return ft_strdup(buf);
-	}
+	state->buffer->index = 0;
 	while (state->input[state->i])
 	{
 		if (!state->in_single && !state->in_double && is_whitespace(state->input[state->i]))
 			break;
-		if (!state->in_single && !state->in_double && (state->input[state->i] == '(' || state->input[state->i] == ')'))
+		if (!state->in_single && !state->in_double &&
+			(state->input[state->i] == '(' || state->input[state->i] == ')'))
 			break;
-		process_token_char(state);
+		process_token_char(state, exit_status, env);
 	}
-	buf[idx] = '\0';
-	return ft_strdup(buf);
+	state->buffer->str[state->buffer->index] = '\0';
+	return (ft_strdup(state->buffer->str));
 }
 
-void	process_token_char(t_token_state *state)
+void	process_token_char(t_token_state *state, int exit_status, t_env *env)
 {
 	char c;
 
@@ -104,46 +95,66 @@ void	process_token_char(t_token_state *state)
 	if (c == '$' && !state->in_single)
 	{
 		if (state->input[state->i + 1] == '?')
-			handle_dollar_question(state->input, &state->i, state->buffer, &state->buf_index);
+			handle_dollar_question(state->input, &state->i, state->buffer, exit_status);
 		else
-			handle_dollar_variable(state->input, &state->i, state->buffer, &state->buf_index);
+			handle_dollar_variable(state->input, &state->i, state->buffer, env);
 		return;
 	}
-	state->buffer[state->buf_index++] = c;
+	append_to_buffer(state->buffer, (char[]){c, '\0'});
 	state->i++;
 }
 
-t_token	*lexer(const char *input)
+t_token *lexer(const char *input)
 {
-	fprintf(stderr, "[debuger] Entree dans lexer() : \"%s\"\n", input);
-	t_token *head;
-	t_token *tail;
-	t_token *token;
-	size_t i;
-	char *tok_str;
+    t_token *head = NULL;
+    t_token *tail = NULL;
+    t_token *token;
+    size_t i;
+    t_token_state state;
 
-	head = NULL;
-	tail = NULL;
-	i = skip_whitespace(input, 0);
-	while (input[i])
-	{
-		tok_str = collect_token(input);
-		if (!tok_str)
-			break;
-		token = create_token(tok_str);
-		free(tok_str);
-		if (!token)
-			break;
-		if (!head)
-			head = tail = token;
-		else
-		{
-			tail->next = token;
-			tail = token;
-		}
-		fprintf(stderr, "[debuger] Token cree : \"%s\"\n", token->value);
-		i = skip_whitespace(input, i);
-	}
-	fprintf(stderr, "[debuger] Fin du lexer()\n");
-	return (head);
+    fprintf(stderr, "[debuger] Entree dans lexer() : \"%s\"\n", input);
+    state.input = input;
+    state.i = 0;
+    state.in_single = false;
+    state.in_double = false;
+
+    // Allouer et initialiser le buffer
+    state.buffer = malloc(sizeof(t_buffer));
+    if (!state.buffer)
+    {
+        perror("malloc");
+        return NULL;
+    }
+    state.buffer->cap = 4096;
+    state.buffer->index = 0;
+    state.buffer->str = malloc(state.buffer->cap);
+    if (!state.buffer->str)
+    {
+        free(state.buffer);
+        perror("malloc");
+        return NULL;
+    }
+
+    i = skip_whitespace(input, 0);
+    while (input[i])
+    {
+        // Réinitialiser l'index du buffer pour chaque token
+        state.i = i;
+        state.buffer->index = 0;
+        token = create_token( collect_token(&state, 0, /*env*/ NULL) );
+        if (!token)
+            break;
+        if (!head)
+            head = tail = token;
+        else
+        {
+            tail->next = token;
+            tail = token;
+        }
+        i = skip_whitespace(input, state.i);
+    }
+    free(state.buffer->str);
+    free(state.buffer);
+    fprintf(stderr, "[debuger] Fin du lexer()\n");
+    return head;
 }

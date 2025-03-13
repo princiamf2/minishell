@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   env.c                                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 18:05:24 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/11 18:24:34 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/12 20:08:01 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,4 +85,64 @@ void env_set(t_env **env, const char *key, const char *val)
 	*env = node;
 }
 
+void	env_unset(t_env **env, const char *key)
+{
+	t_env *node;
+	t_env *prev;
+	size_t key_len;
 
+	node = *env;
+	prev = NULL;
+	key_len = ft_strlen(key);
+	while (node)
+	{
+		if (ft_strncmp(node->key, key, key_len) == 0 && node->key[key_len] == '\0')
+		{
+			if (prev)
+				prev->next = node->next;
+			else
+				*env = node->next;
+			free(node->key);
+			free(node->value);
+			free(node);
+			return ;
+		}
+		prev = node;
+		node = node->next;
+	}
+}
+
+char **env_to_array(t_env *env)
+{
+	int count;
+	t_env *node;
+	char **array;
+	int i;
+	char *tmp;
+	
+	count = 0;
+	node = env;
+	while (node)
+	{
+		count++;
+		node = node->next;
+	}
+	array = malloc((count + 1) * sizeof(char *));
+	if (!array)
+	{
+		perror("malloc");
+		return NULL;
+	}
+	i = 0;
+	node = env;
+	while (node)
+	{
+		tmp = ft_strjoin(node->key, "=");
+		array[i] = ft_strjoin(tmp, node->value);
+		free(tmp);
+		i++;
+		node = node->next;
+	}
+	array[i] = NULL;
+	return (array);
+}

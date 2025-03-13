@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builting.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/08 20:34:31 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 16:05:44 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,9 @@ int is_builtins(char *cmd)
 		|| !ft_strcmp(cmd, "exit"));
 }
 
-int execute_builtin(char **args, char **envp)
+int execute_builtin(char **args, t_data *data)
 {
+	ft_putstr_fd("rentre dans execute_builting\n", 1);
 	if (!ft_strcmp(args[0], "cd"))
 		return (builtin_cd(args));
 	if (!ft_strcmp(args[0], "echo"))
@@ -32,18 +33,20 @@ int execute_builtin(char **args, char **envp)
 	if (!ft_strcmp(args[0], "pwd"))
 		return (builtin_pwd(args));
 	if (!ft_strcmp(args[0], "export"))
-		return (builtin_export(args, &envp));
+		return (builtin_export(args, data));
 	if (!ft_strcmp(args[0], "unset"))
-		return (builtin_unset(args, &envp));
+		return (builtin_unset(args, data));
 	if (!ft_strcmp(args[0], "env"))
-		return (builtin_env(envp));
+		return (builtin_env(env_to_array(data->env)));
 	if (!ft_strcmp(args[0], "exit"))
 		exit(0);
+	ft_putstr_fd("sort de execute_builting\n", 1);
 	return (0);
 }
 
 int builtin_echo(char **args)
 {
+	ft_putstr_fd("rentre echo\n", 1);
 	int i;
 	int nline;
 
@@ -81,14 +84,16 @@ int builtin_pwd(char **args)
 	return (0);
 }
 
-int builtin_export(char **args, char ***env)
+int builtin_export(char **args, t_data *data)
 {
 	int		i;
-	int		index;
 	char	*eq;
+	char	*key;
+	char	*value;
+	size_t	key_len;
 
 	if (!args[1])
-		return (builtin_env(*env));
+		return (builtin_env(env_to_array(data->env)));
 	i = 1;
 	while (args[i])
 	{
@@ -96,20 +101,22 @@ int builtin_export(char **args, char ***env)
 		if (!eq)
 		{
 			i++;
-			continue;
+			continue ;
 		}
-		index = find_env_index(*env, args[i]);
-		if (index >= 0)
+		key_len = eq - args[i];
+		key = ft_substr(args[i], 0, key_len);
+		value = ft_strdup(eq + 1);
+		if (!key || !value)
 		{
-			free((*env)[index]);
-			(*env)[index] = ft_strdup(args[i]);
+			perror("ft_substr/ft_strdup");
+			free(key);
+			free(value);
+			return (1);
 		}
-		else
-		{
-			*env = add_env_variable(*env, args[i]);
-			if (!*env)
-				return (1);
-		}
+		if (update_env_var(data, key, value))
+			free(key);
+		else if (add_env_var(data, key, value))
+			return (1);
 		i++;
 	}
 	return (0);

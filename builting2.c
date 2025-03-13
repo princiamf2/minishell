@@ -3,34 +3,41 @@
 /*                                                        :::      ::::::::   */
 /*   builting2.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 17:36:34 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/08 20:28:52 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 15:40:18 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int builtin_unset(char **args, char ***env)
+int builtin_unset(char **args, t_data *data)
 {
 	int	i;
-	int	index;
-	int	j;
+	t_env *node;
+	t_env *prev;
 
 	i = 1;
 	while (args[i])
 	{
-		index = find_env_index_unset(*env, args[i]);
-		if (index >= 0)
+		prev = NULL;
+		node = data->env;
+		while (node)
 		{
-			free((*env)[index]);
-			j = index;
-			while ((*env)[j])
+			if (ft_strcmp(node->key, args[i]) == 0)
 			{
-				(*env)[j] = (*env)[j + 1];
-				j++;
+				if (prev)
+					prev->next = node->next;
+				else
+					data->env = node->next;
+				free(node->key);
+				free(node->value);
+				free(node);
+				break;
 			}
+			prev = node;
+			node = node->next;
 		}
 		i++;
 	}

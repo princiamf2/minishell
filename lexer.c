@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   lexer.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:06:56 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 12:41:23 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 13:44:26 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -138,7 +138,6 @@ t_token *lexer(const char *input)
     i = skip_whitespace(input, 0);
     while (input[i])
     {
-        // Réinitialiser l'index du buffer pour chaque token
         state.i = i;
         state.buffer->index = 0;
         token = create_token( collect_token(&state, 0, /*env*/ NULL) );

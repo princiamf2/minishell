@@ -3,31 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   utils6.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 12:12:17 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 14:28:07 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
-t_command *init_command(void)
-{
-	t_command *cmd;
-
-	cmd = malloc(sizeof(t_command));
-	if (!cmd)
-	{
-		perror("malloc");
-		return NULL;
-	}
-	cmd->subshell = false;
-	cmd->subshell_ast = NULL;
-	cmd->redirs = NULL;
-	cmd->next_pipe = NULL;
-	return cmd;
-}
 
 bool skip_opening_paren(t_token **cur)
 {

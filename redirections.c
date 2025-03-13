@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   redirections.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
-/*   Updated: 2025/03/09 03:37:58 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 14:16:51 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 int handle_input_redirection(t_command *cmd)
 {
+    ft_putstr_fd("rentre dans handle_input_redirection\n", 1);
     int fd;
 
     if (!cmd->input)
@@ -36,8 +37,9 @@ int handle_input_redirection(t_command *cmd)
 
 int handle_output_trunc_redirection(t_command *cmd)
 {
+    ft_putstr_fd("rentre dans handle_trunc\n", 1);
     int fd;
-    
+
     if (!cmd->output)
         return (0);
     fd = open(cmd->output, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -58,8 +60,9 @@ int handle_output_trunc_redirection(t_command *cmd)
 
 int handle_output_append_redirection(t_command *cmd)
 {
+    ft_putstr_fd("rentre dans handle_output_append\n", 1);
     int fd;
-    
+
     if (!cmd->output)
         return (0);
     fd = open(cmd->output, O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -80,10 +83,11 @@ int handle_output_append_redirection(t_command *cmd)
 
 int handle_heredoc(t_command *cmd)
 {
+    ft_putstr_fd("rentre dans handle_herdoc\n", 1);
 	int fd;
     char *tmp_name;
     int ret;
-    
+
     if (!cmd->heredoc)
         return (0);
     fd = open_tmp_heredoc_file(&tmp_name);
@@ -106,6 +110,7 @@ int handle_heredoc(t_command *cmd)
 
 int handle_redirection(t_command *cmd)
 {
+    ft_putstr_fd("rentre dans handle_redirection\n", 1);
 	int ret;
 
 	if (cmd->heredoc)
@@ -129,5 +134,6 @@ int handle_redirection(t_command *cmd)
 		if (ret < 0)
 			return (ret);
 	}
+    ft_putstr_fd("sort dans handle_redirection\n", 1);
 	return (0);
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute_pipe.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 23:51:31 by michel            #+#    #+#             */
-/*   Updated: 2025/03/13 12:53:51 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 16:17:58 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ int *create_pipes(int n)
     return (pipes);
 }
 
-int execute_child(t_command *cmd, int index, t_pipe_info *pi, t_env *env)
+int execute_child(t_command *cmd, int index, t_pipe_info *pi, t_data *data)
 {
     int j;
 
@@ -61,7 +61,7 @@ int execute_child(t_command *cmd, int index, t_pipe_info *pi, t_env *env)
     if (handle_redirection(cmd) < 0)
         exit(1);
     if (is_builtins(cmd->args[0]))
-        exit(execute_builtin(cmd->args, env_to_array(env)));
+        exit(execute_builtin(cmd->args, data));
     {
         char *exec_path;
         if (ft_strchr(cmd->args[0], '/') != NULL)
@@ -73,15 +73,15 @@ int execute_child(t_command *cmd, int index, t_pipe_info *pi, t_env *env)
             ft_putstr_fd("commande pas trouver\n", 2);
             exit(127);
         }
-        char **env_array = env_to_array(env);
-        print_env_array(env_array);
-        execve(exec_path, cmd->args, env_to_array(env));
+        // char **env_array = env_to_array(env);
+        // print_env_array(env_array);
+        execve(exec_path, cmd->args, env_to_array(data->env));
         perror("execve");
         exit(126);
     }
 }
 
-int fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_env *env)
+int fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_data *data)
 {
     int i = 0;
     t_command *cmd = pipeline;
@@ -99,10 +99,19 @@ int fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_env *env)
         if (pid == 0)
         {
             fprintf(stderr, "[debuger] Enfant %d lancé pour commande: %s\n", i, cmd->args[0]);
-            execute_child(cmd, i, pi, env);
+            execute_child(cmd, i, pi, data);
         }
         cmd = cmd->next_pipe;
         i++;
+    }
+    if (pi->pipes)
+    {
+        i = 0;
+        while (i < 2 * (pi->n - 1))
+        {
+            close(pi->pipes[i]);
+            i++;
+        }
     }
     i = 0;
     while (i < pi->n)
@@ -116,6 +125,7 @@ int fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_env *env)
 
 int execute_pipeline(t_command *pipeline, t_env *env)
 {
+    ft_putstr_fd("rentre dans execute_pipeline\n", 1);
     int n = count_commands(pipeline);
     t_pipe_info pi;
     int status;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 00:54:48 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 16:12:39 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 
 char	*find_excutable(const char *cmd)
 {
+	ft_putstr_fd("rentre dans find_excutable\n", 1);
 	char	*path_env;
 	char	*paths;
 	char	*token;
@@ -57,8 +58,9 @@ char	*find_excutable(const char *cmd)
 	return (NULL);
 }
 
-int execute_command(t_command *cmd, char **envp)
+int execute_command(t_command *cmd, t_data *data)
 {
+	ft_putstr_fd("rentre dans execute_command\n", 1);
 	char *exec_path;
 	int status;
 	pid_t pid;
@@ -66,14 +68,14 @@ int execute_command(t_command *cmd, char **envp)
 	if (handle_redirection(cmd) < 0)
 		return (1);
 	if (is_builtins(cmd->args[0]))
-		return (execute_builtin(cmd->args, envp));
+		return (execute_builtin(cmd->args, data));
 	if (ft_strchr(cmd->args[0], '/') != NULL)
 		exec_path = ft_strdup(cmd->args[0]);
 	else
 		exec_path = find_excutable(cmd->args[0]);
 	if (!exec_path)
 	{
-		ft_putstr_fd("commande pas trouver\n", 2);
+		ft_putstr_fd("exec_path pas trouver\n", 2);
 		return (127);
 	}
 	pid = fork();
@@ -85,21 +87,25 @@ int execute_command(t_command *cmd, char **envp)
 	}
 	if (pid == 0)
 	{
-		if (execve(exec_path, cmd->args, envp) == -1)
+		ft_putstr_fd("pid = 0\n", 1);
+		if (execve(exec_path, cmd->args, env_to_array(data->env)) == -1)
 		{
+			ft_putstr_fd("rentre bien dans execve\n", 1);
 			perror("execve");
 			exit(1);
 		}
 	}
 	waitpid(pid, &status, 0);
 	free(exec_path);
+	ft_putstr_fd("sort de execute_command\n", 1);
 	return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
 }
 
-int execute_full_command(t_command *cmd, t_env *env, char **envp)
+int execute_full_command(t_command *cmd, t_env *env, t_data *data)
 {
+	ft_putstr_fd("rentre dans full_command\n", 1);
     if (cmd->next_pipe)
         return execute_pipeline(cmd, env);
     else
-        return execute_command(cmd, envp);
+        return execute_command(cmd, data);
 }

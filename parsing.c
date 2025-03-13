@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 14:47:37 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/11 15:41:05 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/13 14:27:12 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ t_command *parse_command(t_token **cur)
 	int argc;
 
 	fprintf(stderr, "[debuger] Entree dans parse_command()\n");
+	init_command();
 	if (*cur && ft_strcmp((*cur)->value, "(") == 0)
 	{
 		sub = parse_subshell(cur);

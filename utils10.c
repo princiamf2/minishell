@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils10.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/03/13 12:13:05 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/13 16:19:24 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 int	execute_cmdlist(t_cmdlist *commands, t_env *env)
 {
+	ft_putstr_fd("rentre cmdlist\n", 1);
 	int			last_status;
 	t_cmdlist	*node;
 
@@ -27,15 +28,16 @@ int	execute_cmdlist(t_cmdlist *commands, t_env *env)
 	return (last_status);
 }
 
-int execute_andor(t_andor *list, t_env *env)
+int execute_andor(t_andor *list, t_data *data)
 {
+	ft_putstr_fd("rentre dans andor\n", 1);
 	int result = 0;
 	bool should_run = true;
 	t_andor *node = list;
 	while (node)
 	{
 		if (should_run)
-			result = execute_full_command(node->pipeline, env, env_to_array(env));
+			result = execute_full_command(node->pipeline, data->env, data);
 		if (node->op == AND_IF)
 			should_run = (result == 0);
 		else if (node->op == OR_IF)

@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   utils6.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 14:28:07 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/14 00:40:21 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+#include <linux/limits.h>
 
 bool skip_opening_paren(t_token **cur)
 {
@@ -57,10 +58,11 @@ t_token *collect_tokens_until_closing(t_token **cur)
 
 char **glob_pattern(const char *pattern)
 {
-	if (!pattern)
-		return NULL;
 	char dirpath[PATH_MAX];
 	const char *pat;
+
+	if (!pattern)
+		return NULL;
 	get_dir_and_pattern(pattern, dirpath, sizeof(dirpath), &pat);
 	return read_directory_matches(dirpath, pat);
 }

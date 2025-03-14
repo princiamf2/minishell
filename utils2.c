@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils2.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 02:03:50 by michel            #+#    #+#             */
-/*   Updated: 2025/03/10 16:04:28 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/14 17:55:42 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,10 @@ int read_and_write_heredoc(int fd, const char *delimiter)
     while (1)
     {
         line = readline("> ");
-        if (!line || !ft_strcmp(line, delimiter))
+        ft_putstr_fd("ligne lue: ", 1);
+        ft_putstr_fd(line, 1);
+        ft_putchar_fd('\n', 1);
+        if (!line || ft_strcmp(line, delimiter) == 0)
         {
             free(line);
             break;
@@ -66,6 +69,14 @@ int finalize_heredoc(int fd, char *tmp_name)
 {
     int ret;
 
+    close(fd);
+	fd = open(tmp_name, O_RDONLY);
+	if (fd < 0)
+	{
+		perror("open heredoc (finalize)");
+		free(tmp_name);
+		return (-1);
+	}
     ret = dup2(fd, STDIN_FILENO);
     close(fd);
     unlink(tmp_name);

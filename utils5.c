@@ -3,13 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   utils5.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:07:51 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/11 16:54:13 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/14 18:06:42 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "libft/libft.h"
 #include "minishell.h"
 
 void add_argument_to_cmd(t_command *cmd, const char *arg, size_t *argc, size_t *capacity)
@@ -32,27 +33,23 @@ void add_argument_to_cmd(t_command *cmd, const char *arg, size_t *argc, size_t *
 
 void parse_redirection(t_command *cmd, t_token **cur)
 {
-	t_redir *redir;
-
-	redir = malloc(sizeof(t_redir));
-	if (!redir)
-	{ perror("malloc"); return; }
-	redir->type = (*cur)->type;
-	redir->next = cmd->redirs;
-	cmd->redirs = redir;
-	*cur = (*cur)->next;
-	if (!*cur || (*cur)->type != WORD)
+	if ((*cur)->type == REDIR_OUT || (*cur)->type == REDIR_APPEND)
 	{
-		fprintf(stderr, "[debuger] Erreur: redirection sans cible\n");
-		free(redir);
-		return;
+		cmd->output = ft_strdup((*cur)->next->value);
+		cmd->append = ((*cur)->type == REDIR_APPEND);
+		*cur = (*cur)->next->next;
 	}
-	if (redir->type == HEREDOC)
-		redir->target = read_heredoc((*cur)->value, (*cur)->quoted);
-	else
-		redir->target = ft_strdup((*cur)->value);
-	redir->delim_quoted = (*cur)->quoted;
-	*cur = (*cur)->next;
+	else if ((*cur)->type == REDIR_IN)
+	{
+		cmd->input = ft_strdup((*cur)->next->value);
+		*cur = (*cur)->next->next;
+	}
+	else if ((*cur)->type == HEREDOC)
+	{
+		cmd->heredoc = 1;
+		cmd->input = ft_strdup((*cur)->next->value);
+		*cur = (*cur)->next->next;
+	}
 }
 
 t_andor *parse_andor(t_token **cur)

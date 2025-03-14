@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   utils10.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/03/13 16:19:24 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/14 18:40:51 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	execute_cmdlist(t_cmdlist *commands, t_env *env)
+int	execute_cmdlist(t_cmdlist *commands, t_data *data)
 {
 	ft_putstr_fd("rentre cmdlist\n", 1);
 	int			last_status;
@@ -22,7 +22,7 @@ int	execute_cmdlist(t_cmdlist *commands, t_env *env)
 	node = commands;
 	while (node)
 	{
-		last_status = execute_andor(node->andor, env);
+		last_status = execute_andor(node->andor, data);
 		node = node->next;
 	}
 	return (last_status);
@@ -37,7 +37,7 @@ int execute_andor(t_andor *list, t_data *data)
 	while (node)
 	{
 		if (should_run)
-			result = execute_full_command(node->pipeline, data->env, data);
+			result = execute_full_command(node->pipeline, data);
 		if (node->op == AND_IF)
 			should_run = (result == 0);
 		else if (node->op == OR_IF)
@@ -73,3 +73,30 @@ void free_andor(t_andor *andor)
     }
 }
 
+int	execute_builtin_with_redir(t_command *cmd, t_data *data)
+{
+	int	saved_stdout;
+	int	ret;
+
+	saved_stdout = dup(STDOUT_FILENO);
+	if (saved_stdout < 0)
+	{
+		perror("dup");
+		return (1);
+	}
+	if (handle_redirection(cmd) < 0)
+	{
+		close(saved_stdout);
+		return (1);
+	}
+	/* Exécution du built‑in avec redirection */
+	ret = execute_builtin(cmd->args, data);
+	if (dup2(saved_stdout, STDOUT_FILENO) < 0)
+	{
+		perror("dup2");
+		close(saved_stdout);
+		return (1);
+	}
+	close(saved_stdout);
+	return (ret);
+}

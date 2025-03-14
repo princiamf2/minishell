@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 16:20:21 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/14 01:06:27 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -213,7 +213,7 @@ void					handle_sigint(int sig);
 void					handle_sigquit(int sig);
 bool					validate_tokens_adv(t_token *tokens);
 void					free_tokens(t_token *tokens);
-int						execute_cmdlist(t_cmdlist *commands, t_env *env);
+int						execute_cmdlist(t_cmdlist *commands, t_data *data);
 int						execute_andor(t_andor *list, t_data *data);
 t_command				*parse_pipeline(t_token **cur);
 void					free_cmdlist(t_cmdlist *list);
@@ -221,13 +221,13 @@ void					free_andor(t_andor *andor);
 void					free_command(t_command *cmd);
 void					free_env(t_env *env);
 int						count_commands(t_command *pipeline);
-int						execute_pipeline(t_command *pipeline, t_env *env);
-int						execute_full_command(t_command *cmd, t_env *env,
-							t_data *data);
+int						execute_pipeline(t_command *pipeline, t_data *data);
+int						execute_full_command(t_command *cmd, t_data *data);
 void					append_to_buffer(t_buffer *buf, const char *s);
 void					print_env_array(char **env_array);
 t_command				*init_command(void);
 int						add_env_var(t_data *data, char *key, char *value);
 int						update_env_var(t_data *data, char *key, char *value);
+int						execute_builtin_with_redir(t_command *cmd, t_data *data);
 
 #endif

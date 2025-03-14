@@ -3,17 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   execute.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 16:12:39 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/14 19:39:11 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "libft/libft.h"
 #include "minishell.h"
-#include <sys/wait.h>
-#include <unistd.h>
 
 char	*find_excutable(const char *cmd)
 {
@@ -65,10 +62,10 @@ int execute_command(t_command *cmd, t_data *data)
 	int status;
 	pid_t pid;
 
+	if (is_builtins(cmd->args[0]))
+		return (execute_builtin_with_redir(cmd, data));
 	if (handle_redirection(cmd) < 0)
 		return (1);
-	if (is_builtins(cmd->args[0]))
-		return (execute_builtin(cmd->args, data));
 	if (ft_strchr(cmd->args[0], '/') != NULL)
 		exec_path = ft_strdup(cmd->args[0]);
 	else
@@ -101,11 +98,11 @@ int execute_command(t_command *cmd, t_data *data)
 	return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
 }
 
-int execute_full_command(t_command *cmd, t_env *env, t_data *data)
+int execute_full_command(t_command *cmd, t_data *data)
 {
 	ft_putstr_fd("rentre dans full_command\n", 1);
     if (cmd->next_pipe)
-        return execute_pipeline(cmd, env);
+        return execute_pipeline(cmd, data);
     else
         return execute_command(cmd, data);
 }

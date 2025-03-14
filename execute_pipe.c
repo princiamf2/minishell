@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute_pipe.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 23:51:31 by michel            #+#    #+#             */
-/*   Updated: 2025/03/13 16:17:58 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/13 21:16:33 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,7 +123,7 @@ int fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_data *data)
     return (WEXITSTATUS(last_status));
 }
 
-int execute_pipeline(t_command *pipeline, t_env *env)
+int execute_pipeline(t_command *pipeline, t_data *data)
 {
     ft_putstr_fd("rentre dans execute_pipeline\n", 1);
     int n = count_commands(pipeline);
@@ -134,7 +134,7 @@ int execute_pipeline(t_command *pipeline, t_env *env)
     pi.pipes = create_pipes(n);
     if (n > 1 && !pi.pipes)
         return (-1);
-    status = fork_pipeline(pipeline, &pi, env);
+    status = fork_pipeline(pipeline, &pi, data);
     if (pi.pipes)
         free(pi.pipes);
     return status;

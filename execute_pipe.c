@@ -6,7 +6,7 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 23:51:31 by michel            #+#    #+#             */
-/*   Updated: 2025/03/13 21:16:33 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/16 14:01:50 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,10 +126,11 @@ int fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_data *data)
 int execute_pipeline(t_command *pipeline, t_data *data)
 {
     ft_putstr_fd("rentre dans execute_pipeline\n", 1);
-    int n = count_commands(pipeline);
+    int n;
     t_pipe_info pi;
     int status;
 
+    n = count_commands(pipeline);
     pi.n = n;
     pi.pipes = create_pipes(n);
     if (n > 1 && !pi.pipes)

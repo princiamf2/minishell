@@ -6,11 +6,12 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/14 19:39:11 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/16 13:57:15 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+#include <unistd.h>
 
 char	*find_excutable(const char *cmd)
 {
@@ -61,7 +62,14 @@ int execute_command(t_command *cmd, t_data *data)
 	char *exec_path;
 	int status;
 	pid_t pid;
+	int saved_stdin;
 
+	saved_stdin = dup(STDIN_FILENO);
+	if (saved_stdin < 0)
+	{
+		perror("dup");
+		return (1);
+	}
 	if (is_builtins(cmd->args[0]))
 		return (execute_builtin_with_redir(cmd, data));
 	if (handle_redirection(cmd) < 0)
@@ -73,6 +81,8 @@ int execute_command(t_command *cmd, t_data *data)
 	if (!exec_path)
 	{
 		ft_putstr_fd("exec_path pas trouver\n", 2);
+		dup2(saved_stdin, STDIN_FILENO);
+		close(saved_stdin);
 		return (127);
 	}
 	pid = fork();
@@ -80,6 +90,8 @@ int execute_command(t_command *cmd, t_data *data)
 	{
 		perror("fork");
 		free(exec_path);
+		dup2(saved_stdin, STDIN_FILENO);
+		close(saved_stdin);
 		return (1);
 	}
 	if (pid == 0)
@@ -94,6 +106,8 @@ int execute_command(t_command *cmd, t_data *data)
 	}
 	waitpid(pid, &status, 0);
 	free(exec_path);
+	dup2(saved_stdin, STDIN_FILENO);
+	close(saved_stdin);
 	ft_putstr_fd("sort de execute_command\n", 1);
 	return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
 }

@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 16:05:44 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/18 15:12:57 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,6 @@ int is_builtins(char *cmd)
 
 int execute_builtin(char **args, t_data *data)
 {
-	ft_putstr_fd("rentre dans execute_builting\n", 1);
 	if (!ft_strcmp(args[0], "cd"))
 		return (builtin_cd(args));
 	if (!ft_strcmp(args[0], "echo"))
@@ -40,13 +39,11 @@ int execute_builtin(char **args, t_data *data)
 		return (builtin_env(env_to_array(data->env)));
 	if (!ft_strcmp(args[0], "exit"))
 		exit(0);
-	ft_putstr_fd("sort de execute_builting\n", 1);
 	return (0);
 }
 
 int builtin_echo(char **args)
 {
-	ft_putstr_fd("rentre echo\n", 1);
 	int i;
 	int nline;
 
@@ -84,7 +81,7 @@ int builtin_pwd(char **args)
 	return (0);
 }
 
-int builtin_export(char **args, t_data *data)
+/*int builtin_export(char **args, t_data *data)
 {
 	int		i;
 	char	*eq;
@@ -121,3 +118,68 @@ int builtin_export(char **args, t_data *data)
 	}
 	return (0);
 }
+*/
+
+//fonctions pour separer builtin_export
+
+int	builtin_export(char **args, t_data *data)
+{
+	if (!args[1])
+		return (builtin_env(env_to_array(data->env)));
+
+	return (handle_export_arguments(args, data));
+}
+
+int	handle_export_arguments(char **args, t_data *data)
+{
+	int	i;
+
+	i = 1;
+	while (args[i])
+	{
+		if (process_export_argument(args[i], data))
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+int	process_export_argument(char *arg, t_data *data)
+{
+	char	*eq;
+	char	*value;
+	char	*key;
+
+	eq = ft_strchr(arg, '=');
+	key = extract_key(arg, eq);
+	value = extract_value(eq);
+	if (!eq)
+		return (0);
+	if (!key || !value)
+	{
+		perror("ft_substr/ft_strdup");
+		free(key);
+		free(value);
+		return (1);
+	}
+	if (update_env_var(data, key, value))
+		free(key);
+	else if (add_env_var(data, key, value))
+		return (1);
+
+	return (0);
+}
+
+char	*extract_key(char *arg, char *eq)
+{
+	size_t	key_len;
+
+	key_len = eq - arg;
+	return (ft_substr(arg, 0, key_len));
+}
+
+char	*extract_value(char *eq)
+{
+	return (ft_strdup(eq + 1));
+}
+// fin de la decoupe

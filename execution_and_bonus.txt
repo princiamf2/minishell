@@ -192,3 +192,56 @@ Fin du document
 
 Utilise ce fichier comme guide pour implémenter et tester les différentes parties de ton Minishell. N'hésite pas à revenir sur chaque section pour affiner et adapter le code selon tes besoins et contraintes.
 
+
+
+
+
+
+
+
+int						handle_export_arguments(char **args, t_data *data);
+int						process_export_argument(char *arg, t_data *data);
+char					*extract_key(char *arg, char *eq);
+char					*extract_value(char *eq);
+int						handle_unset_arguments(char **args, t_data *data);
+void					unset_env_variable(t_env **env, char *key);
+void					free_env_variable(t_env *node);
+t_env					*create_env_node(char *env_entry);
+void					add_env_node(t_env **head, t_env *new_node);
+int						count_env_variables(t_env *env);
+char					**allocate_env_array(int count);
+void					convert_env_list_to_array(t_env *env, char **array);
+void					setup_pipes_for_child(int index, t_pipe_info *pi);
+void					close_unused_pipes(t_pipe_info *pi);
+void					execute_builtin_or_command(t_command *cmd,
+							t_data *data);
+int						create_child_process(t_command *cmd, int i,
+							t_pipe_info *pi, t_data *data);
+void					close_pipeline_pipes(t_pipe_info *pi);
+int						wait_for_children(int n);
+char					*get_path_env(void);
+char					*build_executable_path(const char *directory,
+							const char *cmd);
+char					*search_executable_in_paths(char *paths,
+							const char *cmd);
+int						save_and_restore_stdin(int save);
+char					*get_executable_path(t_command *cmd);
+int						fork_and_execute(char *exec_path, t_command *cmd,
+							t_data *data);
+int						execute_external_command(t_command *cmd, t_data *data,
+							int saved_stdin);
+t_token					*allocate_token(void);
+char					*duplicate_token_value(const char *str);
+t_token_type			determine_token_type(const char *str);
+void					initialize_token(t_token *token, const char *str);
+void					handle_whitespace(t_token_state *state);
+void					handle_quotes(t_token_state *state);
+void					handle_escape_character(t_token_state *state);
+void					handle_dollar_sign(t_token_state *state,
+							int exit_status, t_env *env);
+void					process_regular_character(t_token_state *state);
+t_token_state			initialize_token_state(const char *input);
+void					cleanup_token_state(t_token_state *state);
+void					append_token_to_list(t_token **head, t_token **tail,
+							t_token *new_token);
+t_token					*process_tokens(t_token_state *state);

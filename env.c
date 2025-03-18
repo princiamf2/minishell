@@ -3,46 +3,64 @@
 /*                                                        :::      ::::::::   */
 /*   env.c                                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 18:05:24 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/14 19:20:48 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/18 15:32:45 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-t_env *env_init(char **envp)
+t_env	*create_env_node(char *env_entry)
 {
-	t_env *head;
-	t_env *node;
-	int i;
-	char *equal;
+	t_env	*node;
+	char	*equal;
 
-	i = 0;
-	head = NULL;
-	while (envp[i])
+	equal = ft_strchr(env_entry, '=');
+	if (!equal)
+		return (NULL);
+
+	node = malloc(sizeof(t_env));
+	if (!node)
 	{
-		equal = ft_strchr(envp[i], '=');
-		if (equal)
-		{
-			node = malloc(sizeof(t_env));
-			if (!node)
-			{
-				perror("malloc");
-				return NULL;
-			}
-			node->key = ft_substr(envp[i], 0, equal - envp[i]);
-			node->value = ft_strdup(equal + 1);
-			node->next = head;
-			head = node;
-		}
-		i++;
+		perror("malloc");
+		return (NULL);
 	}
+	node->key = ft_substr(env_entry, 0, equal - env_entry);
+	node->value = ft_strdup(equal + 1);
+	node->next = NULL;
+
 	return (node);
 }
 
-char *env_get(t_env *env, const char *key)
+void	add_env_node(t_env **head, t_env *new_node)
+{
+	if (!new_node)
+		return ;
+	new_node->next = *head;
+	*head = new_node;
+}
+
+t_env	*env_init(char **envp)
+{
+	t_env	*head;
+	t_env	*node;
+	int		i;
+
+	head = NULL;
+	i = 0;
+
+	while (envp[i])
+	{
+		node = create_env_node(envp[i]);
+		add_env_node(&head, node);
+		i++;
+	}
+	return (head);
+}
+
+char	*env_get(t_env *env, const char *key)
 {
 	size_t key_len;
 
@@ -56,7 +74,7 @@ char *env_get(t_env *env, const char *key)
 	return (NULL);
 }
 
-void env_set(t_env **env, const char *key, const char *val)
+void	env_set(t_env **env, const char *key, const char *val)
 {
 	t_env *node;
 	size_t key_len;
@@ -112,14 +130,11 @@ void	env_unset(t_env **env, const char *key)
 	}
 }
 
-char **env_to_array(t_env *env)
+int	count_env_variables(t_env *env)
 {
-	int count;
-	t_env *node;
-	char **array;
-	int i;
-	char *tmp;
-	
+	t_env	*node;
+	int		count;
+
 	count = 0;
 	node = env;
 	while (node)
@@ -127,12 +142,28 @@ char **env_to_array(t_env *env)
 		count++;
 		node = node->next;
 	}
+	return (count);
+}
+
+char	**allocate_env_array(int count)
+{
+	char	**array;
+
 	array = malloc((count + 1) * sizeof(char *));
 	if (!array)
 	{
 		perror("malloc");
-		return NULL;
+		return (NULL);
 	}
+	return (array);
+}
+
+void	convert_env_list_to_array(t_env *env, char **array)
+{
+	int		i;
+	t_env	*node;
+	char	*tmp;
+
 	i = 0;
 	node = env;
 	while (node)
@@ -144,5 +175,18 @@ char **env_to_array(t_env *env)
 		node = node->next;
 	}
 	array[i] = NULL;
+}
+
+char	**env_to_array(t_env *env)
+{
+	int		count;
+	char	**array;
+
+	count = count_env_variables(env);
+	array = allocate_env_array(count);
+	if (!array)
+		return (NULL);
+
+	convert_env_list_to_array(env, array);
 	return (array);
 }

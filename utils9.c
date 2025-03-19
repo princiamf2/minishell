@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils9.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 20:58:02 by michel            #+#    #+#             */
-/*   Updated: 2025/03/12 22:09:20 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/19 17:28:20 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ char *build_fullpath(const char *dirpath, const char *filename)
     size_t len_dir;
     size_t len_file;
     char *fullpath;
-    
+
 	if (ft_strcmp(dirpath, ".") == 0)
 		return ft_strdup(filename);
     len_dir = ft_strlen(dirpath);
@@ -46,9 +46,9 @@ char *ft_strcpy(char *dest, const char *src)
 void handle_sigint(int sig)
 {
 	(void)sig;
-	fprintf(stderr, "\n[debuger] SIGINT reçu, prompt reaffiche.\n");
-	fflush(stderr);
 	rl_on_new_line();
+    write(STDOUT_FILENO, "^C", 2);
+    write(STDOUT_FILENO, "\n", 1);
 	rl_replace_line("", 0);
 	rl_redisplay();
 }
@@ -61,7 +61,7 @@ void handle_sigquit(int sig)
 void free_tokens(t_token *tokens)
 {
     t_token *tmp;
-    
+
     while (tokens)
     {
         tmp = tokens->next;

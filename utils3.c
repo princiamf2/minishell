@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils3.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:21:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 12:06:33 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/19 15:43:48 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,6 @@ void append_to_buffer(t_buffer *buf, const char *s)
 	char *new_str;
 
 	len = ft_strlen(s);
-    /* Si nécessaire, réallouer pour assurer la capacité */
     if (buf->index + len + 1 > buf->cap)
     {
         new_cap = buf->cap + len + 1024;

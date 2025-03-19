@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils6.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/14 00:40:21 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/18 17:10:21 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,7 @@
 bool skip_opening_paren(t_token **cur)
 {
 	if (!cur || !*cur || ft_strcmp((*cur)->value, "(") != 0)
-	{
-		fprintf(stderr, "[debuger] Erreur: pas de '(' pour subshell\n");
 		return false;
-	}
 	*cur = (*cur)->next;
 	return true;
 }
@@ -47,10 +44,7 @@ t_token *collect_tokens_until_closing(t_token **cur)
 		*cur = (*cur)->next;
 	}
 	if (!*cur || balance != 0)
-	{
-		fprintf(stderr, "[debuger] Erreur: parenthèses non equilibrees\n");
 		return NULL;
-	}
 	if (prev)
 		prev->next = NULL;
 	return start;

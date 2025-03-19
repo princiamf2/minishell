@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/18 15:12:57 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/18 17:15:47 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,47 +81,6 @@ int builtin_pwd(char **args)
 	return (0);
 }
 
-/*int builtin_export(char **args, t_data *data)
-{
-	int		i;
-	char	*eq;
-	char	*key;
-	char	*value;
-	size_t	key_len;
-
-	if (!args[1])
-		return (builtin_env(env_to_array(data->env)));
-	i = 1;
-	while (args[i])
-	{
-		eq = ft_strchr(args[i], '=');
-		if (!eq)
-		{
-			i++;
-			continue ;
-		}
-		key_len = eq - args[i];
-		key = ft_substr(args[i], 0, key_len);
-		value = ft_strdup(eq + 1);
-		if (!key || !value)
-		{
-			perror("ft_substr/ft_strdup");
-			free(key);
-			free(value);
-			return (1);
-		}
-		if (update_env_var(data, key, value))
-			free(key);
-		else if (add_env_var(data, key, value))
-			return (1);
-		i++;
-	}
-	return (0);
-}
-*/
-
-//fonctions pour separer builtin_export
-
 int	builtin_export(char **args, t_data *data)
 {
 	if (!args[1])
@@ -182,4 +141,3 @@ char	*extract_value(char *eq)
 {
 	return (ft_strdup(eq + 1));
 }
-// fin de la decoupe

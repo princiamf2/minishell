@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 16:46:08 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/11 17:27:32 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/19 12:18:51 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,10 +30,7 @@ char *read_heredoc(const char *delim, bool quoted)
 	{
 		line = readline("> ");
 		if (!line)
-		{
-			fprintf(stderr, "[debuger] EOF atteint dans heredoc\n");
 			break ;
-		}
 		if (ft_strcmp(line, delim) == 0)
 		{
 			free(line);
@@ -51,28 +48,19 @@ t_command *parse_pipeline(t_token **cur)
 	t_command *current;
 	t_command *next;
 
-	fprintf(stderr, "[debuger] Entree dans parse_pipeline()\n");
 	first = parse_command(cur);
 	if (!first)
-	{
-		fprintf(stderr, "[debuger] Aucune commande trouvee dans le pipeline\n");
 		return NULL;
-	}
 	current = first;
 	while (*cur && (*cur)->type == PIPE)
 	{
-		fprintf(stderr, "[debuger] Token PIPE trouve\n");
 		*cur = (*cur)->next;
 		next = parse_command(cur);
 		if (!next)
-		{
-			fprintf(stderr, "[debuger] Erreur: commande après PIPE manquante\n");
 			break;
-		}
 		current->next_pipe = next;
 		current = next;
 	}
-	fprintf(stderr, "[debuger] Fin de parse_pipeline()\n");
 	return first;
 }
 
@@ -107,18 +95,22 @@ char **read_directory_matches(const char *dirpath, const char *pat)
 {
 	DIR *dir;
 	char **matches;
+	size_t capacity;
+	size_t count;
+	struct dirent *entry;
+
 
 	dir = opendir(dirpath);
 	if (!dir)
 		return NULL;
-	size_t capacity = 8, count = 0;
+	capacity = 8;
+	count = 0;
 	matches = malloc(capacity * sizeof(char *));
 	if (!matches)
 	{
 		closedir(dir);
 		return NULL;
 	}
-	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL)
 	{
 		if (ft_strcmp(entry->d_name, ".") == 0 || ft_strcmp(entry->d_name, "..") == 0)

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils5.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:07:51 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/14 18:06:42 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/18 17:10:50 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,32 +60,23 @@ t_andor *parse_andor(t_token **cur)
 	t_command *next_pipeline;
 	t_andor *node;
 
-	fprintf(stderr, "[debuger] Entree dans parse_andor()\n");
 	pipeline = parse_pipeline(cur);
 	if (!pipeline)
-	{
-		fprintf(stderr, "[debuger] Aucun pipeline trouve\n");
 		return NULL;
-	}
 	head = init_andor(pipeline);
 	while (*cur && ((*cur)->type == AND_IF || (*cur)->type == OR_IF))
 	{
-		fprintf(stderr, "[debuger] Operateur logique trouve : \"%s\"\n", (*cur)->value);
 		op = (*cur)->type;
 		*cur = (*cur)->next;
 		next_pipeline = parse_pipeline(cur);
 		if (!next_pipeline)
-		{
-			fprintf(stderr, "[debuger] Erreur: aucun pipeline après l'operateur\n");
 			break;
-		}
 		node = init_andor(next_pipeline);
 		if (!node)
 			break;
 		node->op = op;
 		append_andor(head, node);
 	}
-	fprintf(stderr, "[debuger] Fin de parse_andor()\n");
 	return head;
 }
 

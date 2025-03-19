@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils10.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/03/14 18:40:51 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/19 11:57:04 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 int	execute_cmdlist(t_cmdlist *commands, t_data *data)
 {
-	ft_putstr_fd("rentre cmdlist\n", 1);
 	int			last_status;
 	t_cmdlist	*node;
 
@@ -30,7 +29,6 @@ int	execute_cmdlist(t_cmdlist *commands, t_data *data)
 
 int execute_andor(t_andor *list, t_data *data)
 {
-	ft_putstr_fd("rentre dans andor\n", 1);
 	int result = 0;
 	bool should_run = true;
 	t_andor *node = list;
@@ -89,7 +87,6 @@ int	execute_builtin_with_redir(t_command *cmd, t_data *data)
 		close(saved_stdout);
 		return (1);
 	}
-	/* Exécution du built‑in avec redirection */
 	ret = execute_builtin(cmd->args, data);
 	if (dup2(saved_stdout, STDOUT_FILENO) < 0)
 	{

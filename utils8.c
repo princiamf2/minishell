@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils8.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 17:24:30 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/12 20:56:08 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/19 12:21:54 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,15 +73,18 @@ char *ft_strncpy(char *dest, const char *src, size_t n)
 
 int add_match(char ***matches, size_t *count, size_t *capacity, const char *dirpath, const char *filename)
 {
+	char *fullpath;
+	char **tmp;
+
 	if (*count >= *capacity)
 	{
 		*capacity *= 2;
-		char **tmp = realloc(*matches, (*capacity) * sizeof(char *));
+		tmp = realloc(*matches, (*capacity) * sizeof(char *));
 		if (!tmp)
 			return -1;
 		*matches = tmp;
 	}
-	char *fullpath = build_fullpath(dirpath, filename);
+	fullpath = build_fullpath(dirpath, filename);
 	if (!fullpath)
 		return 0;
 	(*matches)[(*count)++] = fullpath;

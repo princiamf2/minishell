@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/18 17:04:02 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/19 15:46:41 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -228,7 +228,8 @@ void					print_env_array(char **env_array);
 t_command				*init_command(void);
 int						add_env_var(t_data *data, char *key, char *value);
 int						update_env_var(t_data *data, char *key, char *value);
-int						execute_builtin_with_redir(t_command *cmd, t_data *data);
+int						execute_builtin_with_redir(t_command *cmd,
+							t_data *data);
 int						handle_export_arguments(char **args, t_data *data);
 int						process_export_argument(char *arg, t_data *data);
 char					*extract_key(char *arg, char *eq);
@@ -254,12 +255,11 @@ char					*build_executable_path(const char *directory,
 							const char *cmd);
 char					*search_executable_in_paths(char *paths,
 							const char *cmd);
-int						save_and_restore_stdin(int save);
+int						save_stdin(void);
 char					*get_executable_path(t_command *cmd);
 int						fork_and_execute(char *exec_path, t_command *cmd,
 							t_data *data);
-int						execute_external_command(t_command *cmd, t_data *data,
-							int saved_stdin);
+int						execute_external_command(t_command *cmd, t_data *data);
 t_token					*allocate_token(void);
 char					*duplicate_token_value(const char *str);
 t_token_type			determine_token_type(const char *str);
@@ -275,4 +275,7 @@ void					cleanup_token_state(t_token_state *state);
 void					append_token_to_list(t_token **head, t_token **tail,
 							t_token *new_token);
 t_token					*process_tokens(t_token_state *state);
+void					restore_stdin(int saved);
+int						save_stdin(void);
+
 #endif

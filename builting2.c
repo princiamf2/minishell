@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 17:36:34 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/18 15:13:13 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/18 17:15:52 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,6 @@ void	free_env_variable(t_env *node)
 	free(node->value);
 	free(node);
 }
-//fin decoupe builtin_unset
 
 int builtin_env(char **env)
 {

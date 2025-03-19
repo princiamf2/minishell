@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 21:41:55 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/19 17:19:36 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv, char **envp)
             continue ;
         if (!validate_tokens_adv(data->tokens))
         {
-            fprintf(stderr, "Syntaxe invalide.\n");
+            ft_putendl_fd("Syntaxe invalide.\n", 2);
             free_tokens(data->tokens);
             continue ;
         }
@@ -53,7 +53,7 @@ int main(int argc, char **argv, char **envp)
         data->exit_status = execute_cmdlist(data->cmdlist, data);
         free_cmdlist(data->cmdlist);
     }
-    fprintf(stderr, "exit\n");
+    ft_putendl_fd("exit", 2);
     rl_clear_history();
     free_env(data->env);
     return (data->exit_status);

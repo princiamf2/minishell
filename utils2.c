@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils2.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 02:03:50 by michel            #+#    #+#             */
-/*   Updated: 2025/03/14 17:55:42 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/18 17:19:35 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,9 +50,6 @@ int read_and_write_heredoc(int fd, const char *delimiter)
     while (1)
     {
         line = readline("> ");
-        ft_putstr_fd("ligne lue: ", 1);
-        ft_putstr_fd(line, 1);
-        ft_putchar_fd('\n', 1);
         if (!line || ft_strcmp(line, delimiter) == 0)
         {
             free(line);

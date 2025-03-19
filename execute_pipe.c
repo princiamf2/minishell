@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 23:51:31 by michel            #+#    #+#             */
-/*   Updated: 2025/03/18 15:21:44 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/19 16:59:36 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,10 +82,8 @@ int	execute_child(t_command *cmd, int index, t_pipe_info *pi, t_data *data)
 {
 	setup_pipes_for_child(index, pi);
 	close_unused_pipes(pi);
-
 	if (handle_redirection(cmd) < 0)
 		exit(1);
-
 	execute_builtin_or_command(cmd, data);
 	return (0);
 }
@@ -101,10 +99,7 @@ int create_child_process(t_command *cmd, int i, t_pipe_info *pi, t_data *data)
 		return (-1);
 	}
 	if (pid == 0)
-	{
-		fprintf(stderr, "[debugger] Enfant %d lancé pour commande: %s\n", i, cmd->args[0]);
 		execute_child(cmd, i, pi, data);
-	}
 	return (pid);
 }
 

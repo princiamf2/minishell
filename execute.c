@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/18 15:24:51 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/19 16:30:21 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,16 +73,19 @@ char	*find_excutable(const char *cmd)
 	return (full_path);
 }
 
-int	save_and_restore_stdin(int save)
+int save_stdin(void)
 {
-	if (save)
-		return (dup(STDIN_FILENO));
-	else
-	{
-		dup2(save, STDIN_FILENO);
-		close(save);
-	}
-	return (0);
+    int fd = dup(STDIN_FILENO);
+    if (fd < 0)
+        perror("dup");
+    return fd;
+}
+
+void restore_stdin(int saved)
+{
+    if (dup2(saved, STDIN_FILENO) < 0)
+        perror("dup2");
+    close(saved);
 }
 
 char	*get_executable_path(t_command *cmd)
@@ -106,7 +109,8 @@ int	fork_and_execute(char *exec_path, t_command *cmd, t_data *data)
 	}
 	if (pid == 0)
 	{
-		ft_putstr_fd("pid = 0\n", 1);
+		if (handle_redirection(cmd) < 0)
+            exit(1);
 		if (execve(exec_path, cmd->args, env_to_array(data->env)) == -1)
 		{
 			perror("execve");
@@ -117,50 +121,44 @@ int	fork_and_execute(char *exec_path, t_command *cmd, t_data *data)
 	return (WIFEXITED(status)) ? WEXITSTATUS(status) : 1;
 }
 
-int	execute_external_command(t_command *cmd, t_data *data, int saved_stdin)
+int	execute_external_command(t_command *cmd, t_data *data)
 {
 	char	*exec_path;
 	int		status;
 
 	exec_path = get_executable_path(cmd);
 	if (!exec_path)
-	{
-		ft_putstr_fd("exec_path pas trouvé\n", 2);
-		save_and_restore_stdin(saved_stdin);
 		return (127);
-	}
-
 	status = fork_and_execute(exec_path, cmd, data);
 	free(exec_path);
-	save_and_restore_stdin(saved_stdin);
 	return (status);
 }
 
 int	execute_command(t_command *cmd, t_data *data)
 {
 	int	saved_stdin;
+	int saved_stdout;
 	int	status;
 
-	saved_stdin = save_and_restore_stdin(1);
+	saved_stdin = save_stdin();
+	saved_stdout = dup(STDOUT_FILENO);
 	if (saved_stdin < 0)
 	{
 		perror("dup");
 		return (1);
 	}
-
 	if (is_builtins(cmd->args[0]))
 		return (execute_builtin_with_redir(cmd, data));
-
-	if (handle_redirection(cmd) < 0)
-		return (1);
-
-	status = execute_external_command(cmd, data, saved_stdin);
+	status = execute_external_command(cmd, data);
+	restore_stdin(saved_stdin);
+    if (dup2(saved_stdout, STDOUT_FILENO) < 0)
+        perror("dup2 stdout");
+    close(saved_stdout);
 	return (status);
 }
 
 int execute_full_command(t_command *cmd, t_data *data)
 {
-	ft_putstr_fd("rentre dans full_command\n", 1);
 	if (cmd->next_pipe)
 		return execute_pipeline(cmd, data);
 	else

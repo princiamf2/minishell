@@ -3,13 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   utils10.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/03/19 11:57:04 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/20 20:03:56 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "libft/libft.h"
 #include "minishell.h"
 
 int	execute_cmdlist(t_cmdlist *commands, t_data *data)

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/19 17:19:36 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/20 20:01:33 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ int main(int argc, char **argv, char **envp)
     {
         if (*data->input)
             add_history(data->input);
-        data->tokens = lexer(data->input);
+        data->tokens = lexer(data->input, data->env);
         free(data->input);
         if (!data->tokens)
             continue ;

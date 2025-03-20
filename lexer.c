@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   lexer.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:06:56 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/19 16:08:22 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/20 19:59:45 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -240,7 +240,7 @@ void append_token_to_list(t_token **head, t_token **tail, t_token *new_token)
 	}
 }
 
-t_token	*process_tokens(t_token_state *state)
+t_token	*process_tokens(t_token_state *state, t_env *env)
 {
 	t_token	*head;
 	t_token	*tail;
@@ -254,7 +254,7 @@ t_token	*process_tokens(t_token_state *state)
 	{
 		state->i = i;
 		state->buffer->index = 0;
-		token = create_token(collect_token(state, 0, NULL));
+		token = create_token(collect_token(state, 0, env));
 		if (!token)
 			break ;
 		append_token_to_list(&head, &tail, token);
@@ -263,13 +263,13 @@ t_token	*process_tokens(t_token_state *state)
 	return (head);
 }
 
-t_token	*lexer(const char *input)
+t_token	*lexer(const char *input, t_env *env)
 {
 	t_token_state	state;
 	t_token	*head;
 
 	state = initialize_token_state(input);
-	head = process_tokens(&state);
+	head = process_tokens(&state, env);
 	cleanup_token_state(&state);
 	return (head);
 }

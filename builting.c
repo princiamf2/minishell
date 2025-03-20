@@ -3,13 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   builting.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/18 17:15:47 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/20 20:04:16 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "libft/libft.h"
 #include "minishell.h"
 
 int is_builtins(char *cmd)

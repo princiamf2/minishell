@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/19 15:46:41 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/20 19:27:46 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,7 +167,7 @@ char					*collect_token(t_token_state *state, int exit_status,
 							t_env *env);
 void					process_token_char(t_token_state *state,
 							int exit_status, t_env *env);
-t_token					*lexer(const char *input);
+t_token					*lexer(const char *input, t_env *env);
 t_cmdlist				*build_subshell_ast(t_token *tokens);
 t_token					*extract_subshell_tokens(t_token **cur);
 t_command				*create_subshell_command(t_cmdlist *sub_ast);
@@ -274,8 +274,7 @@ t_token_state			initialize_token_state(const char *input);
 void					cleanup_token_state(t_token_state *state);
 void					append_token_to_list(t_token **head, t_token **tail,
 							t_token *new_token);
-t_token					*process_tokens(t_token_state *state);
+t_token					*process_tokens(t_token_state *state, t_env *env);
 void					restore_stdin(int saved);
 int						save_stdin(void);
-
 #endif

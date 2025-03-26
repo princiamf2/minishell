@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/20 19:27:46 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/26 19:30:44 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,6 +109,15 @@ typedef struct s_andor
 	struct s_andor		*next;
 }						t_andor;
 
+typedef struct s_gloinfo
+{
+	DIR					*dir;
+	char				**matches;
+	size_t				count;
+	size_t				capacity;
+	char				*dirpath;
+}						t_globinfo;
+
 typedef struct s_cmdlist
 {
 	t_andor				*andor;
@@ -203,8 +212,7 @@ t_command				*parse_command(t_token **cur);
 t_command				*parse_subshell(t_token **cur);
 char					*ft_strncpy(char *dest, const char *src, size_t n);
 bool					match_pattern(const char *pattern, const char *str);
-int						add_match(char ***matches, size_t *count,
-							size_t *capacity, const char *dirpath,
+int						add_match(t_globinfo *info, const char *dirpath,
 							const char *filename);
 char					*build_fullpath(const char *dirpath,
 							const char *filename);
@@ -277,4 +285,16 @@ void					append_token_to_list(t_token **head, t_token **tail,
 t_token					*process_tokens(t_token_state *state, t_env *env);
 void					restore_stdin(int saved);
 int						save_stdin(void);
+int						*create_pipes(int n);
+void					skip_semicolon(t_token **tokens);
+bool					update_paren(t_token *cur, int *paren_balance);
+bool					validate_redirection(t_token *cur);
+bool					update_operator(t_token *cur, bool *prev_operator);
+bool					is_operator(t_token *token);
+bool					adjacent_operators(t_token *prev, t_token *cur);
+bool					handle_in_redirect(t_token_state *state);
+bool					handle_out_redirect(t_token_state *state);
+bool					handle_pipe_operator(t_token_state *state);
+bool					handle_amp_operator(t_token_state *state);
+bool					handle_special_operators(t_token_state *state);
 #endif

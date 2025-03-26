@@ -6,108 +6,107 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
-/*   Updated: 2025/03/19 13:02:12 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/26 19:33:15 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-#include <fcntl.h>
 
-int handle_input_redirection(t_command *cmd)
+int	handle_input_redirection(t_command *cmd)
 {
-    int fd;
+	int	fd;
 
-    if (!cmd->input)
-        return (0);
-    fd = open(cmd->input, O_RDONLY);
-    if (fd < 0)
-    {
-        perror("open input");
-        return (-1);
-    }
-    if (dup2(fd, STDIN_FILENO) < 0)
-    {
-        perror("dub2 input");
-        close(fd);
-        return (-1);
-    }
-    close(fd);
-    return (0);
+	if (!cmd->input)
+		return (0);
+	fd = open(cmd->input, O_RDONLY);
+	if (fd < 0)
+	{
+		perror("open input");
+		return (-1);
+	}
+	if (dup2(fd, STDIN_FILENO) < 0)
+	{
+		perror("dub2 input");
+		close(fd);
+		return (-1);
+	}
+	close(fd);
+	return (0);
 }
 
-int handle_output_trunc_redirection(t_command *cmd)
+int	handle_output_trunc_redirection(t_command *cmd)
 {
-    int fd;
+	int	fd;
 
-    if (!cmd->output)
-        return (0);
-    fd = open(cmd->output, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd < 0)
-    {
-        perror("open output");
-        return (-1);
-    }
-    if (dup2(fd, STDOUT_FILENO) < 0)
-    {
-        perror("dup2 output");
-        close(fd);
-        return (-1);
-    }
-    close(fd);
-    return (0);
+	if (!cmd->output)
+		return (0);
+	fd = open(cmd->output, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd < 0)
+	{
+		perror("open output");
+		return (-1);
+	}
+	if (dup2(fd, STDOUT_FILENO) < 0)
+	{
+		perror("dup2 output");
+		close(fd);
+		return (-1);
+	}
+	close(fd);
+	return (0);
 }
 
-int handle_output_append_redirection(t_command *cmd)
+int	handle_output_append_redirection(t_command *cmd)
 {
-    int fd;
+	int	fd;
 
-    if (!cmd->output)
-        return (0);
-    fd = open(cmd->output, O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (fd < 0)
-    {
-        perror("open output (append)");
-        return (-1);
-    }
-    if (dup2(fd, STDOUT_FILENO) < 0)
-    {
-        perror("dup2 output (append)");
-        close(fd);
-        return (-1);
-    }
-    close(fd);
-    return (0);
+	if (!cmd->output)
+		return (0);
+	fd = open(cmd->output, O_WRONLY | O_CREAT | O_APPEND, 0644);
+	if (fd < 0)
+	{
+		perror("open output (append)");
+		return (-1);
+	}
+	if (dup2(fd, STDOUT_FILENO) < 0)
+	{
+		perror("dup2 output (append)");
+		close(fd);
+		return (-1);
+	}
+	close(fd);
+	return (0);
 }
 
-int handle_heredoc(t_command *cmd)
+int	handle_heredoc(t_command *cmd)
 {
-	int fd;
-    char *tmp_name;
-    int ret;
+	int		fd;
+	char	*tmp_name;
+	int		ret;
 
-    if (!cmd->heredoc)
-        return (0);
-    fd = open_tmp_heredoc_file(&tmp_name);
-    if (fd < 0)
-    {
-        perror("open heredoc");
-        free(tmp_name);
-        return (-1);
-    }
-    ret = read_and_write_heredoc(fd, cmd->input);
-    if (ret < 0)
-    {
-        close(fd);
-        free(tmp_name);
-        return (-1);
-    }
-    ret = finalize_heredoc(fd, tmp_name);
-    return (ret);
+	if (!cmd->heredoc)
+		return (0);
+	fd = open_tmp_heredoc_file(&tmp_name);
+	if (fd < 0)
+	{
+		perror("open heredoc");
+		free(tmp_name);
+		return (-1);
+	}
+	ret = read_and_write_heredoc(fd, cmd->input);
+	if (ret < 0)
+	{
+		close(fd);
+		free(tmp_name);
+		return (-1);
+	}
+	ret = finalize_heredoc(fd, tmp_name);
+	return (ret);
 }
 
-int handle_redirection(t_command *cmd)
+int	handle_redirection(t_command *cmd)
 {
-	int ret;
+	int	ret;
 
 	if (cmd->heredoc)
 	{

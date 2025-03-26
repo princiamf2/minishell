@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils10.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/03/20 20:03:56 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/26 19:34:52 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,15 @@ int	execute_cmdlist(t_cmdlist *commands, t_data *data)
 	return (last_status);
 }
 
-int execute_andor(t_andor *list, t_data *data)
+int	execute_andor(t_andor *list, t_data *data)
 {
-	int result = 0;
-	bool should_run = true;
-	t_andor *node = list;
+	int		result;
+	bool	should_run;
+	t_andor	*node;
+
+	result = 0;
+	should_run = true;
+	node = list;
 	while (node)
 	{
 		if (should_run)
@@ -45,31 +49,33 @@ int execute_andor(t_andor *list, t_data *data)
 			should_run = true;
 		node = node->next;
 	}
-	return result;
+	return (result);
 }
 
-void free_cmdlist(t_cmdlist *list)
+void	free_cmdlist(t_cmdlist *list)
 {
-    t_cmdlist *next;
-    while (list)
-    {
-        next = list->next;
-        free_andor(list->andor);
-        free(list);
-        list = next;
-    }
+	t_cmdlist	*next;
+
+	while (list)
+	{
+		next = list->next;
+		free_andor(list->andor);
+		free(list);
+		list = next;
+	}
 }
 
-void free_andor(t_andor *andor)
+void	free_andor(t_andor *andor)
 {
-    t_andor *next;
-    while (andor)
-    {
-        next = andor->next;
-        free_command(andor->pipeline);
-        free(andor);
-        andor = next;
-    }
+	t_andor	*next;
+
+	while (andor)
+	{
+		next = andor->next;
+		free_command(andor->pipeline);
+		free(andor);
+		andor = next;
+	}
 }
 
 int	execute_builtin_with_redir(t_command *cmd, t_data *data)

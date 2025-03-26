@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   utils.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 17:34:08 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/13 01:45:28 by michel           ###   ########.fr       */
+/*   Updated: 2025/03/26 19:34:08 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-# include "minishell.h"
+#include "minishell.h"
 
 char	*ft_strtok(char *s, const char *delim)
 {
@@ -39,9 +39,9 @@ char	*ft_strtok(char *s, const char *delim)
 	return (token);
 }
 
-int ft_strcmp(const char *s1, const char *s2)
+int	ft_strcmp(const char *s1, const char *s2)
 {
-	int i;
+	int	i;
 
 	i = 0;
 	while (s1[i] || s2[i])
@@ -53,11 +53,11 @@ int ft_strcmp(const char *s1, const char *s2)
 	return (s1[i] - s2[i]);
 }
 
-int find_env_index(char **env, char *var)
+int	find_env_index(char **env, char *var)
 {
-	int i;
-	size_t key_len;
-	char *eq;
+	int		i;
+	size_t	key_len;
+	char	*eq;
 
 	i = 0;
 	eq = ft_strchr(var, '=');
@@ -73,11 +73,11 @@ int find_env_index(char **env, char *var)
 	return (-1);
 }
 
-char **add_env_variable(char **env, char *new_var)
+char	**add_env_variable(char **env, char *new_var)
 {
-	int cnt;
-	int i;
-	char **new_env;
+	int		cnt;
+	int		i;
+	char	**new_env;
 
 	cnt = 0;
 	while (env[cnt])
@@ -97,10 +97,10 @@ char **add_env_variable(char **env, char *new_var)
 	return (new_env);
 }
 
-int find_env_index_unset(char **env, char *var)
+int	find_env_index_unset(char **env, char *var)
 {
-	int i;
-	int len;
+	int	i;
+	int	len;
 
 	i = 0;
 	len = ft_strlen(var);

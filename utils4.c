@@ -6,45 +6,45 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:03:00 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/19 12:41:10 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/26 19:34:23 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-t_cmdlist *build_subshell_ast(t_token *tokens)
+t_cmdlist	*build_subshell_ast(t_token *tokens)
 {
-	return parse_line(tokens);
+	return (parse_line(tokens));
 }
 
-t_token *extract_subshell_tokens(t_token **cur)
+t_token	*extract_subshell_tokens(t_token **cur)
 {
 	if (!skip_opening_paren(cur))
-		return NULL;
-	return collect_tokens_until_closing(cur);
+		return (NULL);
+	return (collect_tokens_until_closing(cur));
 }
 
-t_command *create_subshell_command(t_cmdlist *sub_ast)
+t_command	*create_subshell_command(t_cmdlist *sub_ast)
 {
-	t_command *cmd;
+	t_command	*cmd;
 
 	cmd = malloc(sizeof(t_command));
 	if (!cmd)
 	{
 		perror("malloc");
-		return NULL;
+		return (NULL);
 	}
 	cmd->subshell = true;
 	cmd->subshell_ast = sub_ast;
 	cmd->args = NULL;
 	cmd->redirs = NULL;
 	cmd->next_pipe = NULL;
-	return cmd;
+	return (cmd);
 }
-int parse_command_arguments(t_command *cmd, t_token **cur)
+int	parse_command_arguments(t_command *cmd, t_token **cur)
 {
-	size_t capacity;
-	size_t argc;
+	size_t	capacity;
+	size_t	argc;
 
 	capacity = 8;
 	argc = 0;
@@ -52,7 +52,7 @@ int parse_command_arguments(t_command *cmd, t_token **cur)
 	if (!cmd->args)
 	{
 		free(cmd);
-		return -1;
+		return (-1);
 	}
 	while (*cur && (((*cur)->type == WORD) || is_redirection(*cur)))
 	{
@@ -62,13 +62,14 @@ int parse_command_arguments(t_command *cmd, t_token **cur)
 			parse_redirection(cmd, cur);
 	}
 	cmd->args[argc] = NULL;
-	return (int)argc;
+	return ((int)argc);
 }
 
-void handle_word_token(t_token **cur, t_command *cmd, size_t *argc, size_t *capacity)
+void	handle_word_token(t_token **cur, t_command *cmd, size_t *argc,
+		size_t *capacity)
 {
-	char **matches;
-	size_t mi;
+	char	**matches;
+	size_t	mi;
 
 	if (strchr((*cur)->value, '*') && !(*cur)->quoted)
 	{
@@ -89,7 +90,7 @@ void handle_word_token(t_token **cur, t_command *cmd, size_t *argc, size_t *capa
 			}
 			free(matches);
 			*cur = (*cur)->next;
-			return;
+			return ;
 		}
 		else
 		{

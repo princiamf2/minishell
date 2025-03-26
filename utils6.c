@@ -6,26 +6,25 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/18 17:10:21 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/26 19:34:32 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-#include <linux/limits.h>
 
-bool skip_opening_paren(t_token **cur)
+bool	skip_opening_paren(t_token **cur)
 {
 	if (!cur || !*cur || ft_strcmp((*cur)->value, "(") != 0)
-		return false;
+		return (false);
 	*cur = (*cur)->next;
-	return true;
+	return (true);
 }
 
-t_token *collect_tokens_until_closing(t_token **cur)
+t_token	*collect_tokens_until_closing(t_token **cur)
 {
-	t_token *start;
-	t_token *prev;
-	int balance;
+	t_token	*start;
+	t_token	*prev;
+	int		balance;
 
 	start = *cur;
 	prev = NULL;
@@ -38,25 +37,49 @@ t_token *collect_tokens_until_closing(t_token **cur)
 		{
 			balance--;
 			if (balance == 0)
-				break;
+				break ;
 		}
 		prev = *cur;
 		*cur = (*cur)->next;
 	}
 	if (!*cur || balance != 0)
-		return NULL;
+		return (NULL);
 	if (prev)
 		prev->next = NULL;
-	return start;
+	return (start);
 }
 
-char **glob_pattern(const char *pattern)
+char	**glob_pattern(const char *pattern)
 {
-	char dirpath[PATH_MAX];
-	const char *pat;
+	char		dirpath[PATH_MAX];
+	const char	*pat;
 
 	if (!pattern)
-		return NULL;
+		return (NULL);
 	get_dir_and_pattern(pattern, dirpath, sizeof(dirpath), &pat);
-	return read_directory_matches(dirpath, pat);
+	return (read_directory_matches(dirpath, pat));
+}
+
+void	print_env_array(char **env_array)
+{
+	int	i;
+
+	i = 0;
+	if (!env_array)
+	{
+		printf("env_array est NULL\n");
+		return ;
+	}
+	while (env_array[i])
+	{
+		printf("%s\n", env_array[i]);
+		i++;
+	}
+}
+
+char	*get_executable_path(t_command *cmd)
+{
+	if (ft_strchr(cmd->args[0], '/') != NULL)
+		return (ft_strdup(cmd->args[0]));
+	return (find_excutable(cmd->args[0]));
 }

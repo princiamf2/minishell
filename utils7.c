@@ -6,20 +6,20 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 16:46:08 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/19 12:18:51 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/26 19:34:38 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char *read_heredoc(const char *delim, bool quoted)
+char	*read_heredoc(const char *delim, bool quoted)
 {
-	(void)quoted;
-	size_t cap;
-	size_t len;
-	char *content;
-	char *line;
+	size_t	cap;
+	size_t	len;
+	char	*content;
+	char	*line;
 
+	(void)quoted;
 	cap = 1024;
 	len = 0;
 	content = malloc(cap);
@@ -42,32 +42,33 @@ char *read_heredoc(const char *delim, bool quoted)
 	return (content);
 }
 
-t_command *parse_pipeline(t_token **cur)
+t_command	*parse_pipeline(t_token **cur)
 {
-	t_command *first;
-	t_command *current;
-	t_command *next;
+	t_command	*first;
+	t_command	*current;
+	t_command	*next;
 
 	first = parse_command(cur);
 	if (!first)
-		return NULL;
+		return (NULL);
 	current = first;
 	while (*cur && (*cur)->type == PIPE)
 	{
 		*cur = (*cur)->next;
 		next = parse_command(cur);
 		if (!next)
-			break;
+			break ;
 		current->next_pipe = next;
 		current = next;
 	}
-	return first;
+	return (first);
 }
 
-void get_dir_and_pattern(const char *pattern, char *dirpath, size_t size, const char **pat)
+void	get_dir_and_pattern(const char *pattern, char *dirpath, size_t size,
+		const char **pat)
 {
-	const char *slash;
-	size_t len;
+	const char	*slash;
+	size_t		len;
 
 	slash = strrchr(pattern, '/');
 	if (slash)
@@ -77,13 +78,15 @@ void get_dir_and_pattern(const char *pattern, char *dirpath, size_t size, const 
 		{
 			ft_strncpy(dirpath, pattern, len);
 			dirpath[len] = '\0';
-		} else
+		}
+		else
 		{
 			ft_strncpy(dirpath, ".", size);
 			dirpath[size - 1] = '\0';
 		}
 		*pat = slash + 1;
-	} else
+	}
+	else
 	{
 		ft_strncpy(dirpath, ".", size);
 		dirpath[size - 1] = '\0';
@@ -91,47 +94,44 @@ void get_dir_and_pattern(const char *pattern, char *dirpath, size_t size, const 
 	}
 }
 
-char **read_directory_matches(const char *dirpath, const char *pat)
+char	**read_directory_matches(const char *dirpath, const char *pat)
 {
-	DIR *dir;
-	char **matches;
-	size_t capacity;
-	size_t count;
-	struct dirent *entry;
+	t_globinfo		info;
+	struct dirent	*entry;
 
-
-	dir = opendir(dirpath);
-	if (!dir)
-		return NULL;
-	capacity = 8;
-	count = 0;
-	matches = malloc(capacity * sizeof(char *));
-	if (!matches)
+	info.dir = opendir(dirpath);
+	if (!info.dir)
+		return (NULL);
+	info.capacity = 8;
+	info.count = 0;
+	info.matches = malloc(info.capacity * sizeof(char *));
+	if (!info.matches)
 	{
-		closedir(dir);
-		return NULL;
+		closedir(info.dir);
+		return (NULL);
 	}
-	while ((entry = readdir(dir)) != NULL)
+	while ((entry = readdir(info.dir)) != NULL)
 	{
-		if (ft_strcmp(entry->d_name, ".") == 0 || ft_strcmp(entry->d_name, "..") == 0)
-			continue;
+		if (ft_strcmp(entry->d_name, ".") == 0 || ft_strcmp(entry->d_name,
+				"..") == 0)
+			continue ;
 		if (match_pattern(pat, entry->d_name))
 		{
-			if (add_match(&matches, &count, &capacity, dirpath, entry->d_name) == -1)
-				break;
+			if (add_match(&info, dirpath, entry->d_name) == -1)
+				break ;
 		}
 	}
-	closedir(dir);
-	matches = realloc(matches, (count + 1) * sizeof(char *));
-	if (matches)
-		matches[count] = NULL;
-	return matches;
+	closedir(info.dir);
+	info.matches = realloc(info.matches, (info.count + 1) * sizeof(char *));
+	if (info.matches)
+		info.matches[info.count] = NULL;
+	return (info.matches);
 }
 
-void append_line(char **content, size_t *len, size_t *cap, const char *line)
+void	append_line(char **content, size_t *len, size_t *cap, const char *line)
 {
-	size_t l_len;
-	char *tmp;
+	size_t	l_len;
+	char	*tmp;
 
 	l_len = ft_strlen(line);
 	if (*len + l_len + 2 > *cap)

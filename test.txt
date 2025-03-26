@@ -1,0 +1,2807 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   builting.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:32:21 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+int	is_builtins(char *cmd)
+{
+	return (!ft_strcmp(cmd, "cd") || !ft_strcmp(cmd, "echo") || !ft_strcmp(cmd,
+			"pwd") || !ft_strcmp(cmd, "export") || !ft_strcmp(cmd, "unset")
+		|| !ft_strcmp(cmd, "env") || !ft_strcmp(cmd, "exit"));
+}
+
+int	execute_builtin(char **args, t_data *data)
+{
+	if (!ft_strcmp(args[0], "cd"))
+		return (builtin_cd(args));
+	if (!ft_strcmp(args[0], "echo"))
+		return (builtin_echo(args));
+	if (!ft_strcmp(args[0], "pwd"))
+		return (builtin_pwd(args));
+	if (!ft_strcmp(args[0], "export"))
+		return (builtin_export(args, data));
+	if (!ft_strcmp(args[0], "unset"))
+		return (builtin_unset(args, data));
+	if (!ft_strcmp(args[0], "env"))
+		return (builtin_env(env_to_array(data->env)));
+	if (!ft_strcmp(args[0], "exit"))
+		exit(0);
+	return (0);
+}
+
+int	builtin_echo(char **args)
+{
+	int	i;
+	int	nline;
+
+	i = 1;
+	nline = 1;
+	if (args[i] && ft_strcmp(args[i], "-n") == 0)
+	{
+		nline = 0;
+		i++;
+	}
+	while (args[i])
+	{
+		ft_putstr_fd(args[i], 1);
+		if (args[i + 1])
+			ft_putstr_fd(" ", 1);
+		i++;
+	}
+	if (nline)
+		ft_putstr_fd("\n", 1);
+	return (0);
+}
+
+int	builtin_pwd(char **args)
+{
+	char	path[4096];
+
+	(void)args;
+	if (getcwd(path, sizeof(path)) == NULL)
+	{
+		perror("pwd");
+		return (1);
+	}
+	ft_putstr_fd(path, 1);
+	ft_putchar_fd('\n', 1);
+	return (0);
+}
+
+int	builtin_export(char **args, t_data *data)
+{
+	if (!args[1])
+		return (builtin_env(env_to_array(data->env)));
+	return (handle_export_arguments(args, data));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   builting2.c                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/07 17:36:34 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:32:27 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+int	builtin_unset(char **args, t_data *data)
+{
+	if (!args[1])
+		return (0);
+	return (handle_unset_arguments(args, data));
+}
+
+int	handle_unset_arguments(char **args, t_data *data)
+{
+	int	i;
+
+	i = 1;
+	while (args[i])
+	{
+		unset_env_variable(&(data->env), args[i]);
+		i++;
+	}
+	return (0);
+}
+
+void	free_env_variable(t_env *node)
+{
+	if (!node)
+		return ;
+	free(node->key);
+	free(node->value);
+	free(node);
+}
+
+int	builtin_env(char **env)
+{
+	int	i;
+
+	i = 0;
+	while (env[i])
+	{
+		ft_putstr_fd(env[i], 1);
+		ft_putchar_fd('\n', 1);
+		i++;
+	}
+	return (0);
+}
+
+int	builtin_cd(char **args)
+{
+	char	*path;
+
+	if (!args[1])
+	{
+		path = getenv("HOME");
+		if (!path)
+		{
+			ft_putstr_fd("cd : HOME not set\n", 2);
+			return (1);
+		}
+	}
+	else
+		path = args[1];
+	if (chdir(path) != 0)
+	{
+		perror("cd");
+		return (1);
+	}
+	return (0);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   env.c                                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/11 18:05:24 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:32:32 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+t_env	*create_env_node(char *env_entry)
+{
+	t_env	*node;
+	char	*equal;
+
+	equal = ft_strchr(env_entry, '=');
+	if (!equal)
+		return (NULL);
+	node = malloc(sizeof(t_env));
+	if (!node)
+	{
+		perror("malloc");
+		return (NULL);
+	}
+	node->key = ft_substr(env_entry, 0, equal - env_entry);
+	node->value = ft_strdup(equal + 1);
+	node->next = NULL;
+	return (node);
+}
+
+void	add_env_node(t_env **head, t_env *new_node)
+{
+	if (!new_node)
+		return ;
+	new_node->next = *head;
+	*head = new_node;
+}
+
+t_env	*env_init(char **envp)
+{
+	t_env	*head;
+	t_env	*node;
+	int		i;
+
+	head = NULL;
+	i = 0;
+	while (envp[i])
+	{
+		node = create_env_node(envp[i]);
+		add_env_node(&head, node);
+		i++;
+	}
+	return (head);
+}
+
+char	*env_get(t_env *env, const char *key)
+{
+	size_t	key_len;
+
+	key_len = ft_strlen(key);
+	while (env)
+	{
+		if (ft_strncmp(env->key, key, key_len) == 0
+			&& env->key[key_len] == '\0')
+			return (env->value);
+		env = env->next;
+	}
+	return (NULL);
+}
+
+void	env_set(t_env **env, const char *key, const char *val)
+{
+	t_env	*node;
+	size_t	key_len;
+
+	node = *env;
+	key_len = ft_strlen(key);
+	while (node)
+	{
+		if (ft_strncmp(node->key, key, key_len) == 0
+			&& node->key[key_len] == '\0')
+		{
+			free(node->value);
+			node->value = ft_strdup(val);
+			return ;
+		}
+		node = node->next;
+	}
+	node = malloc(sizeof(t_env));
+	if (!node)
+	{
+		perror("malloc");
+		return ;
+	}
+	node->key = ft_strdup(key);
+	node->value = ft_strdup(val);
+	node->next = *env;
+	*env = node;
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   execute.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:39:42 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*find_excutable(const char *cmd)
+{
+	char	*paths;
+	char	*full_path;
+
+	paths = get_path_env();
+	if (!paths)
+		return (NULL);
+	full_path = search_executable_in_paths(paths, cmd);
+	free(paths);
+	return (full_path);
+}
+
+int	fork_and_execute(char *exec_path, t_command *cmd, t_data *data)
+{
+	pid_t	pid;
+	int		status;
+
+	pid = fork();
+	if (pid < 0)
+	{
+		perror("fork");
+		free(exec_path);
+		return (1);
+	}
+	if (pid == 0)
+	{
+		if (handle_redirection(cmd) < 0)
+			exit(1);
+		if (execve(exec_path, cmd->args, env_to_array(data->env)) == -1)
+		{
+			perror("execve");
+			exit(1);
+		}
+	}
+	waitpid(pid, &status, 0);
+	if (WIFEXITED(status))
+		return (WEXITSTATUS(status));
+	return (1);
+}
+
+int	execute_external_command(t_command *cmd, t_data *data)
+{
+	char	*exec_path;
+	int		status;
+
+	exec_path = get_executable_path(cmd);
+	if (!exec_path)
+		return (127);
+	status = fork_and_execute(exec_path, cmd, data);
+	free(exec_path);
+	return (status);
+}
+
+int	execute_command(t_command *cmd, t_data *data)
+{
+	int	saved_stdin;
+	int	saved_stdout;
+	int	status;
+
+	saved_stdin = save_stdin();
+	saved_stdout = dup(STDOUT_FILENO);
+	if (saved_stdin < 0)
+	{
+		perror("dup");
+		return (1);
+	}
+	if (is_builtins(cmd->args[0]))
+		return (execute_builtin_with_redir(cmd, data));
+	status = execute_external_command(cmd, data);
+	restore_stdin(saved_stdin);
+	if (dup2(saved_stdout, STDOUT_FILENO) < 0)
+		perror("dup2 stdout");
+	close(saved_stdout);
+	return (status);
+}
+
+int	execute_full_command(t_command *cmd, t_data *data)
+{
+	if (cmd->next_pipe)
+		return (execute_pipeline(cmd, data));
+	else
+		return (execute_command(cmd, data));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   execute_pipe.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/12 23:51:31 by michel            #+#    #+#             */
+/*   Updated: 2025/03/26 19:32:37 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void	execute_builtin_or_command(t_command *cmd, t_data *data)
+{
+	char	*exec_path;
+
+	if (is_builtins(cmd->args[0]))
+		exit(execute_builtin(cmd->args, data));
+	if (ft_strchr(cmd->args[0], '/') != NULL)
+		exec_path = ft_strdup(cmd->args[0]);
+	else
+		exec_path = find_excutable(cmd->args[0]);
+	if (!exec_path)
+		exit(127);
+	execve(exec_path, cmd->args, env_to_array(data->env));
+	perror("execve");
+	exit(126);
+}
+
+int	execute_child(t_command *cmd, int index, t_pipe_info *pi, t_data *data)
+{
+	setup_pipes_for_child(index, pi);
+	close_unused_pipes(pi);
+	if (handle_redirection(cmd) < 0)
+		exit(1);
+	execute_builtin_or_command(cmd, data);
+	return (0);
+}
+
+int	create_child_process(t_command *cmd, int i, t_pipe_info *pi, t_data *data)
+{
+	pid_t	pid;
+
+	pid = fork();
+	if (pid < 0)
+	{
+		perror("fork");
+		return (-1);
+	}
+	if (pid == 0)
+		execute_child(cmd, i, pi, data);
+	return (pid);
+}
+
+int	fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_data *data)
+{
+	int			i;
+	t_command	*cmd;
+	pid_t		pid;
+
+	cmd = pipeline;
+	i = 0;
+	while (cmd)
+	{
+		pid = create_child_process(cmd, i, pi, data);
+		if (pid < 0)
+			return (-1);
+		cmd = cmd->next_pipe;
+		i++;
+	}
+	close_pipeline_pipes(pi);
+	return (wait_for_children(pi->n));
+}
+
+int	execute_pipeline(t_command *pipeline, t_data *data)
+{
+	int			n;
+	t_pipe_info	pi;
+	int			status;
+
+	n = count_commands(pipeline);
+	pi.n = n;
+	pi.pipes = create_pipes(n);
+	if (n > 1 && !pi.pipes)
+		return (-1);
+	status = fork_pipeline(pipeline, &pi, data);
+	if (pi.pipes)
+		free(pi.pipes);
+	return (status);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   lexer.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/10 16:06:56 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:32:49 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+t_token_type	determine_token_type(const char *str)
+{
+	if (strcmp(str, "|") == 0)
+		return (PIPE);
+	if (strcmp(str, "&&") == 0)
+		return (AND_IF);
+	if (strcmp(str, "||") == 0)
+		return (OR_IF);
+	if (strcmp(str, ";") == 0)
+		return (SEMICOLON);
+	if (strcmp(str, ">") == 0)
+		return (REDIR_OUT);
+	if (strcmp(str, "<") == 0)
+		return (REDIR_IN);
+	if (strcmp(str, ">>") == 0)
+		return (REDIR_APPEND);
+	if (strcmp(str, "<<") == 0)
+		return (HEREDOC);
+	return (WORD);
+}
+
+t_token	*create_token(const char *str)
+{
+	t_token	*token;
+
+	token = allocate_token();
+	if (!token)
+		return (NULL);
+	initialize_token(token, str);
+	if (!token->value)
+	{
+		free(token);
+		return (NULL);
+	}
+	return (token);
+}
+
+char	*collect_token(t_token_state *state, int exit_status, t_env *env)
+{
+	state->buffer->index = 0;
+	while (state->input[state->i])
+	{
+		if (!state->in_single && !state->in_double
+			&& is_whitespace(state->input[state->i]))
+			break ;
+		if (!state->in_single && !state->in_double
+			&& (state->input[state->i] == '(' || state->input[state->i] == ')'))
+			break ;
+		if (handle_special_operators(state))
+			break ;
+		process_token_char(state, exit_status, env);
+	}
+	state->buffer->str[state->buffer->index] = '\0';
+	return (ft_strdup(state->buffer->str));
+}
+
+t_token	*process_tokens(t_token_state *state, t_env *env)
+{
+	t_token	*head;
+	t_token	*tail;
+	t_token	*token;
+	size_t	i;
+
+	i = skip_whitespace(state->input, 0);
+	head = NULL;
+	tail = NULL;
+	while (state->input[i])
+	{
+		state->i = i;
+		state->buffer->index = 0;
+		token = create_token(collect_token(state, 0, env));
+		if (!token)
+			break ;
+		append_token_to_list(&head, &tail, token);
+		i = skip_whitespace(state->input, state->i);
+	}
+	return (head);
+}
+
+t_token	*lexer(const char *input, t_env *env)
+{
+	t_token_state	state;
+	t_token			*head;
+
+	state = initialize_token_state(input);
+	head = process_tokens(&state, env);
+	cleanup_token_state(&state);
+	return (head);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   redirections.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:15 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+int	handle_input_redirection(t_command *cmd)
+{
+	int	fd;
+
+	if (!cmd->input)
+		return (0);
+	fd = open(cmd->input, O_RDONLY);
+	if (fd < 0)
+	{
+		perror("open input");
+		return (-1);
+	}
+	if (dup2(fd, STDIN_FILENO) < 0)
+	{
+		perror("dub2 input");
+		close(fd);
+		return (-1);
+	}
+	close(fd);
+	return (0);
+}
+
+int	handle_output_trunc_redirection(t_command *cmd)
+{
+	int	fd;
+
+	if (!cmd->output)
+		return (0);
+	fd = open(cmd->output, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd < 0)
+	{
+		perror("open output");
+		return (-1);
+	}
+	if (dup2(fd, STDOUT_FILENO) < 0)
+	{
+		perror("dup2 output");
+		close(fd);
+		return (-1);
+	}
+	close(fd);
+	return (0);
+}
+
+int	handle_output_append_redirection(t_command *cmd)
+{
+	int	fd;
+
+	if (!cmd->output)
+		return (0);
+	fd = open(cmd->output, O_WRONLY | O_CREAT | O_APPEND, 0644);
+	if (fd < 0)
+	{
+		perror("open output (append)");
+		return (-1);
+	}
+	if (dup2(fd, STDOUT_FILENO) < 0)
+	{
+		perror("dup2 output (append)");
+		close(fd);
+		return (-1);
+	}
+	close(fd);
+	return (0);
+}
+
+int	handle_heredoc(t_command *cmd)
+{
+	int		fd;
+	char	*tmp_name;
+	int		ret;
+
+	if (!cmd->heredoc)
+		return (0);
+	fd = open_tmp_heredoc_file(&tmp_name);
+	if (fd < 0)
+	{
+		perror("open heredoc");
+		free(tmp_name);
+		return (-1);
+	}
+	ret = read_and_write_heredoc(fd, cmd->input);
+	if (ret < 0)
+	{
+		close(fd);
+		free(tmp_name);
+		return (-1);
+	}
+	ret = finalize_heredoc(fd, tmp_name);
+	return (ret);
+}
+
+int	handle_redirection(t_command *cmd)
+{
+	int	ret;
+
+	if (cmd->heredoc)
+	{
+		ret = handle_heredoc(cmd);
+		if (ret < 0)
+			return (ret);
+	}
+	else if (cmd->input)
+	{
+		ret = handle_input_redirection(cmd);
+		if (ret < 0)
+			return (ret);
+	}
+	if (cmd->output)
+	{
+		if (cmd->append)
+			ret = handle_output_append_redirection(cmd);
+		else
+			ret = handle_output_trunc_redirection(cmd);
+		if (ret < 0)
+			return (ret);
+	}
+	return (0);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/05 17:34:08 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:08 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*ft_strtok(char *s, const char *delim)
+{
+	static char	*static_str;
+	char		*token;
+
+	if (s)
+		static_str = s;
+	if (!static_str || !delim)
+		return (NULL);
+	while (*static_str && ft_strchr(delim, *static_str))
+		static_str++;
+	if (!*static_str)
+	{
+		static_str = NULL;
+		return (NULL);
+	}
+	token = static_str;
+	while (*static_str && !ft_strchr(delim, *static_str))
+		static_str++;
+	if (*static_str)
+	{
+		*static_str = '\0';
+		static_str++;
+	}
+	return (token);
+}
+
+int	ft_strcmp(const char *s1, const char *s2)
+{
+	int	i;
+
+	i = 0;
+	while (s1[i] || s2[i])
+	{
+		if (s1[i] != s2[i])
+			return (s1[i] - s2[i]);
+		i++;
+	}
+	return (s1[i] - s2[i]);
+}
+
+int	find_env_index(char **env, char *var)
+{
+	int		i;
+	size_t	key_len;
+	char	*eq;
+
+	i = 0;
+	eq = ft_strchr(var, '=');
+	if (!eq)
+		return (-1);
+	key_len = eq - var;
+	while (env[i])
+	{
+		if (!ft_strncmp(env[i], var, key_len) && env[i][key_len] == '=')
+			return (i);
+		i++;
+	}
+	return (-1);
+}
+
+char	**add_env_variable(char **env, char *new_var)
+{
+	int		cnt;
+	int		i;
+	char	**new_env;
+
+	cnt = 0;
+	while (env[cnt])
+		cnt++;
+	new_env = malloc((cnt + 2) * sizeof(char *));
+	if (!new_env)
+		return (NULL);
+	i = 0;
+	while (i < cnt)
+	{
+		new_env[i] = env[i];
+		i++;
+	}
+	new_env[i] = ft_strdup(new_var);
+	new_env[i + 1] = NULL;
+	free(env);
+	return (new_env);
+}
+
+int	find_env_index_unset(char **env, char *var)
+{
+	int	i;
+	int	len;
+
+	i = 0;
+	len = ft_strlen(var);
+	while (env[i])
+	{
+		if (!ft_strncmp(env[i], var, len) && env[i][len] == '=')
+			return (i);
+		i++;
+	}
+	return (-1);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils2.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/09 02:03:50 by michel            #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:15 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*generate_tmp_name(void)
+{
+	static int	counter;
+	char		*prefix;
+	char		*num_str;
+	char		*tmp_name;
+	static int	init;
+
+	if (!init)
+	{
+		counter = 0;
+		init = 1;
+	}
+	prefix = "/tmp/minishell_heredoc_";
+	num_str = ft_itoa(counter);
+	tmp_name = ft_strjoin(prefix, num_str);
+	free(num_str);
+	counter++;
+	return (tmp_name);
+}
+
+int	open_tmp_heredoc_file(char **tmp_name)
+{
+	int	fd;
+
+	*tmp_name = generate_tmp_name();
+	unlink(*tmp_name);
+	fd = open(*tmp_name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+	return (fd);
+}
+
+int	read_and_write_heredoc(int fd, const char *delimiter)
+{
+	char	*line;
+
+	while (1)
+	{
+		line = readline("> ");
+		if (!line || ft_strcmp(line, delimiter) == 0)
+		{
+			free(line);
+			break ;
+		}
+		write(fd, line, ft_strlen(line));
+		write(fd, "\n", 1);
+		free(line);
+	}
+	return (0);
+}
+
+int	finalize_heredoc(int fd, char *tmp_name)
+{
+	int	ret;
+
+	close(fd);
+	fd = open(tmp_name, O_RDONLY);
+	if (fd < 0)
+	{
+		perror("open heredoc (finalize)");
+		free(tmp_name);
+		return (-1);
+	}
+	ret = dup2(fd, STDIN_FILENO);
+	close(fd);
+	unlink(tmp_name);
+	free(tmp_name);
+	if (ret < 0)
+		return (-1);
+	return (0);
+}
+
+void	skip_semicolon(t_token **tokens)
+{
+	if (*tokens && (*tokens)->type == SEMICOLON)
+		*tokens = (*tokens)->next;
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils3.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/10 16:21:31 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:19 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+bool	is_whitespace(char c)
+{
+	return (c == ' ' || c == '\t');
+}
+
+size_t	skip_whitespace(const char *input, size_t i)
+{
+	while (input[i] && is_whitespace(input[i]))
+		i++;
+	return (i);
+}
+
+void	append_to_buffer(t_buffer *buf, const char *s)
+{
+	size_t	len;
+	size_t	new_cap;
+	char	*new_str;
+
+	len = ft_strlen(s);
+	if (buf->index + len + 1 > buf->cap)
+	{
+		new_cap = buf->cap + len + 1024;
+		new_str = realloc(buf->str, new_cap);
+		if (!new_str)
+		{
+			free(buf->str);
+			buf->str = NULL;
+			buf->cap = 0;
+			return ;
+		}
+		buf->str = new_str;
+		buf->cap = new_cap;
+	}
+	ft_strlcpy(buf->str + buf->index, s, len + 1);
+	buf->index += len;
+}
+
+void	handle_dollar_question(const char *input, size_t *i, t_buffer *buf,
+		int exit_status)
+{
+	char	*num_str;
+
+	(void)input;
+	num_str = ft_itoa(exit_status);
+	if (!num_str)
+		return ;
+	append_to_buffer(buf, num_str);
+	free(num_str);
+	*i += 2;
+}
+
+void	handle_dollar_variable(const char *input, size_t *i, t_buffer *buf,
+		t_env *env)
+{
+	size_t	start;
+	size_t	len;
+	char	var[256];
+	char	*val;
+
+	start = *i + 1;
+	len = 0;
+	while (input[start + len] && (isalnum(input[start + len]) || input[start
+			+ len] == '_'))
+		len++;
+	if (len)
+	{
+		if (len >= sizeof(var))
+			len = sizeof(var) - 1;
+		ft_strncpy(var, input + start, len);
+		var[len] = '\0';
+		val = env_get(env, var);
+		if (!val)
+			val = "";
+		append_to_buffer(buf, val);
+		*i = start + len;
+	}
+	else
+		buf->str[buf->index++] = input[(*i)++];
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils4.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/11 15:03:00 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:23 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+t_cmdlist	*build_subshell_ast(t_token *tokens)
+{
+	return (parse_line(tokens));
+}
+
+t_token	*extract_subshell_tokens(t_token **cur)
+{
+	if (!skip_opening_paren(cur))
+		return (NULL);
+	return (collect_tokens_until_closing(cur));
+}
+
+t_command	*create_subshell_command(t_cmdlist *sub_ast)
+{
+	t_command	*cmd;
+
+	cmd = malloc(sizeof(t_command));
+	if (!cmd)
+	{
+		perror("malloc");
+		return (NULL);
+	}
+	cmd->subshell = true;
+	cmd->subshell_ast = sub_ast;
+	cmd->args = NULL;
+	cmd->redirs = NULL;
+	cmd->next_pipe = NULL;
+	return (cmd);
+}
+int	parse_command_arguments(t_command *cmd, t_token **cur)
+{
+	size_t	capacity;
+	size_t	argc;
+
+	capacity = 8;
+	argc = 0;
+	cmd->args = malloc(capacity * sizeof(char *));
+	if (!cmd->args)
+	{
+		free(cmd);
+		return (-1);
+	}
+	while (*cur && (((*cur)->type == WORD) || is_redirection(*cur)))
+	{
+		if ((*cur)->type == WORD)
+			handle_word_token(cur, cmd, &argc, &capacity);
+		else
+			parse_redirection(cmd, cur);
+	}
+	cmd->args[argc] = NULL;
+	return ((int)argc);
+}
+
+void	handle_word_token(t_token **cur, t_command *cmd, size_t *argc,
+		size_t *capacity)
+{
+	char	**matches;
+	size_t	mi;
+
+	if (strchr((*cur)->value, '*') && !(*cur)->quoted)
+	{
+		matches = glob_pattern((*cur)->value);
+		if (matches && matches[0])
+		{
+			mi = 0;
+			while (matches[mi])
+			{
+				add_argument_to_cmd(cmd, matches[mi], argc, capacity);
+				mi++;
+			}
+			mi = 0;
+			while (matches[mi])
+			{
+				free(matches[mi]);
+				mi++;
+			}
+			free(matches);
+			*cur = (*cur)->next;
+			return ;
+		}
+		else
+		{
+			if (matches)
+				free(matches);
+		}
+	}
+	add_argument_to_cmd(cmd, (*cur)->value, argc, capacity);
+	*cur = (*cur)->next;
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils5.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/11 15:07:51 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:28 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void	add_argument_to_cmd(t_command *cmd, const char *arg, size_t *argc,
+		size_t *capacity)
+{
+	char	**tmp;
+
+	if (*argc + 1 >= *capacity)
+	{
+		*capacity *= 2;
+		tmp = realloc(cmd->args, *capacity * sizeof(char *));
+		if (!tmp)
+		{
+			perror("realloc");
+			return ;
+		}
+		cmd->args = tmp;
+	}
+	cmd->args[(*argc)++] = ft_strdup(arg);
+}
+
+void	parse_redirection(t_command *cmd, t_token **cur)
+{
+	if ((*cur)->type == REDIR_OUT || (*cur)->type == REDIR_APPEND)
+	{
+		cmd->output = ft_strdup((*cur)->next->value);
+		cmd->append = ((*cur)->type == REDIR_APPEND);
+		*cur = (*cur)->next->next;
+	}
+	else if ((*cur)->type == REDIR_IN)
+	{
+		cmd->input = ft_strdup((*cur)->next->value);
+		*cur = (*cur)->next->next;
+	}
+	else if ((*cur)->type == HEREDOC)
+	{
+		cmd->heredoc = 1;
+		cmd->input = ft_strdup((*cur)->next->value);
+		*cur = (*cur)->next->next;
+	}
+}
+
+t_andor	*parse_andor(t_token **cur)
+{
+	t_command		*pipeline;
+	t_andor			*head;
+	t_token_type	op;
+	t_command		*next_pipeline;
+	t_andor			*node;
+
+	pipeline = parse_pipeline(cur);
+	if (!pipeline)
+		return (NULL);
+	head = init_andor(pipeline);
+	while (*cur && ((*cur)->type == AND_IF || (*cur)->type == OR_IF))
+	{
+		op = (*cur)->type;
+		*cur = (*cur)->next;
+		next_pipeline = parse_pipeline(cur);
+		if (!next_pipeline)
+			break ;
+		node = init_andor(next_pipeline);
+		if (!node)
+			break ;
+		node->op = op;
+		append_andor(head, node);
+	}
+	return (head);
+}
+
+void	append_andor(t_andor *head, t_andor *node)
+{
+	t_andor	*cur;
+
+	cur = head;
+	while (cur->next)
+		cur = cur->next;
+	cur->next = node;
+}
+
+t_andor	*init_andor(t_command *pipeline)
+{
+	t_andor	*andor;
+
+	andor = malloc(sizeof(t_andor));
+	if (!andor)
+	{
+		perror("malloc");
+		return (NULL);
+	}
+	andor->pipeline = pipeline;
+	andor->op = 0;
+	andor->next = NULL;
+	return (andor);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils6.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:32 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+bool	skip_opening_paren(t_token **cur)
+{
+	if (!cur || !*cur || ft_strcmp((*cur)->value, "(") != 0)
+		return (false);
+	*cur = (*cur)->next;
+	return (true);
+}
+
+t_token	*collect_tokens_until_closing(t_token **cur)
+{
+	t_token	*start;
+	t_token	*prev;
+	int		balance;
+
+	start = *cur;
+	prev = NULL;
+	balance = 1;
+	while (*cur)
+	{
+		if (ft_strcmp((*cur)->value, "(") == 0)
+			balance++;
+		else if (ft_strcmp((*cur)->value, ")") == 0)
+		{
+			balance--;
+			if (balance == 0)
+				break ;
+		}
+		prev = *cur;
+		*cur = (*cur)->next;
+	}
+	if (!*cur || balance != 0)
+		return (NULL);
+	if (prev)
+		prev->next = NULL;
+	return (start);
+}
+
+char	**glob_pattern(const char *pattern)
+{
+	char		dirpath[PATH_MAX];
+	const char	*pat;
+
+	if (!pattern)
+		return (NULL);
+	get_dir_and_pattern(pattern, dirpath, sizeof(dirpath), &pat);
+	return (read_directory_matches(dirpath, pat));
+}
+
+void	print_env_array(char **env_array)
+{
+	int	i;
+
+	i = 0;
+	if (!env_array)
+	{
+		printf("env_array est NULL\n");
+		return ;
+	}
+	while (env_array[i])
+	{
+		printf("%s\n", env_array[i]);
+		i++;
+	}
+}
+
+char	*get_executable_path(t_command *cmd)
+{
+	if (ft_strchr(cmd->args[0], '/') != NULL)
+		return (ft_strdup(cmd->args[0]));
+	return (find_excutable(cmd->args[0]));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils7.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/11 16:46:08 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:38 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*read_heredoc(const char *delim, bool quoted)
+{
+	size_t	cap;
+	size_t	len;
+	char	*content;
+	char	*line;
+
+	(void)quoted;
+	cap = 1024;
+	len = 0;
+	content = malloc(cap);
+	if (!content)
+		exit(1);
+	content[0] = '\0';
+	while (1)
+	{
+		line = readline("> ");
+		if (!line)
+			break ;
+		if (ft_strcmp(line, delim) == 0)
+		{
+			free(line);
+			break ;
+		}
+		append_line(&content, &len, &cap, line);
+		free(line);
+	}
+	return (content);
+}
+
+t_command	*parse_pipeline(t_token **cur)
+{
+	t_command	*first;
+	t_command	*current;
+	t_command	*next;
+
+	first = parse_command(cur);
+	if (!first)
+		return (NULL);
+	current = first;
+	while (*cur && (*cur)->type == PIPE)
+	{
+		*cur = (*cur)->next;
+		next = parse_command(cur);
+		if (!next)
+			break ;
+		current->next_pipe = next;
+		current = next;
+	}
+	return (first);
+}
+
+void	get_dir_and_pattern(const char *pattern, char *dirpath, size_t size,
+		const char **pat)
+{
+	const char	*slash;
+	size_t		len;
+
+	slash = strrchr(pattern, '/');
+	if (slash)
+	{
+		len = slash - pattern;
+		if (len < size)
+		{
+			ft_strncpy(dirpath, pattern, len);
+			dirpath[len] = '\0';
+		}
+		else
+		{
+			ft_strncpy(dirpath, ".", size);
+			dirpath[size - 1] = '\0';
+		}
+		*pat = slash + 1;
+	}
+	else
+	{
+		ft_strncpy(dirpath, ".", size);
+		dirpath[size - 1] = '\0';
+		*pat = pattern;
+	}
+}
+
+char	**read_directory_matches(const char *dirpath, const char *pat)
+{
+	t_globinfo		info;
+	struct dirent	*entry;
+
+	info.dir = opendir(dirpath);
+	if (!info.dir)
+		return (NULL);
+	info.capacity = 8;
+	info.count = 0;
+	info.matches = malloc(info.capacity * sizeof(char *));
+	if (!info.matches)
+	{
+		closedir(info.dir);
+		return (NULL);
+	}
+	while ((entry = readdir(info.dir)) != NULL)
+	{
+		if (ft_strcmp(entry->d_name, ".") == 0 || ft_strcmp(entry->d_name,
+				"..") == 0)
+			continue ;
+		if (match_pattern(pat, entry->d_name))
+		{
+			if (add_match(&info, dirpath, entry->d_name) == -1)
+				break ;
+		}
+	}
+	closedir(info.dir);
+	info.matches = realloc(info.matches, (info.count + 1) * sizeof(char *));
+	if (info.matches)
+		info.matches[info.count] = NULL;
+	return (info.matches);
+}
+
+void	append_line(char **content, size_t *len, size_t *cap, const char *line)
+{
+	size_t	l_len;
+	char	*tmp;
+
+	l_len = ft_strlen(line);
+	if (*len + l_len + 2 > *cap)
+	{
+		*cap += l_len + 1024;
+		tmp = realloc(*content, *cap);
+		if (!tmp)
+		{
+			free(*content);
+			exit(1);
+		}
+		*content = tmp;
+	}
+	ft_strcpy(*content + *len, line);
+	*len += l_len;
+	(*content)[(*len)++] = '\n';
+	(*content)[*len] = '\0';
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils8.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/11 17:24:30 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:43 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+bool	match_pattern(const char *pattern, const char *str)
+{
+	size_t	skip;
+
+	if (!*pattern)
+		return (!*str);
+	if (*pattern == '*')
+	{
+		skip = 0;
+		while (true)
+		{
+			if (match_pattern(pattern + 1, str + skip))
+				return (true);
+			if (!str[skip])
+				break ;
+			skip++;
+		}
+		return (false);
+	}
+	return (*pattern == *str) && match_pattern(pattern + 1, str + 1);
+}
+
+bool	is_redirection(t_token *token)
+{
+	return (token->type == REDIR_IN || token->type == REDIR_OUT
+		|| token->type == REDIR_APPEND || token->type == HEREDOC);
+}
+
+void	free_env(t_env *env)
+{
+	t_env	*tmp;
+
+	while (env)
+	{
+		tmp = env->next;
+		free(env->key);
+		free(env->value);
+		free(env);
+		env = tmp;
+	}
+}
+
+char	*ft_strncpy(char *dest, const char *src, size_t n)
+{
+	size_t	i;
+
+	i = 0;
+	while (i < n && src[i] != '\0')
+	{
+		dest[i] = src[i];
+		i++;
+	}
+	while (i < n)
+	{
+		dest[i] = '\0';
+		i++;
+	}
+	return (dest);
+}
+
+int	add_match(t_globinfo *info, const char *dirpath, const char *filename)
+{
+	char	*fullpath;
+	char	**tmp;
+
+	if (info->count >= info->capacity)
+	{
+		info->capacity *= 2;
+		tmp = realloc(info->matches, info->capacity * sizeof(char *));
+		if (!tmp)
+			return (-1);
+		info->matches = tmp;
+	}
+	fullpath = build_fullpath(dirpath, filename);
+	if (!fullpath)
+		return (0);
+	info->matches[info->count++] = fullpath;
+	return (1);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils9.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/12 20:58:02 by michel            #+#    #+#             */
+/*   Updated: 2025/03/26 19:36:34 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*build_fullpath(const char *dirpath, const char *filename)
+{
+	size_t	len_dir;
+	size_t	len_file;
+	char	*fullpath;
+
+	if (ft_strcmp(dirpath, ".") == 0)
+		return (ft_strdup(filename));
+	len_dir = ft_strlen(dirpath);
+	len_file = ft_strlen(filename);
+	fullpath = malloc(len_dir + 1 + len_file + 1);
+	if (!fullpath)
+		return (NULL);
+	ft_strcpy(fullpath, dirpath);
+	fullpath[len_dir] = '/';
+	ft_strcpy(fullpath + len_dir + 1, filename);
+	return (fullpath);
+}
+
+char	*ft_strcpy(char *dest, const char *src)
+{
+	int	i;
+
+	i = 0;
+	while (src[i] != '\0')
+	{
+		dest[i] = src[i];
+		i++;
+	}
+	dest[i] = '\0';
+	return (dest);
+}
+
+void	handle_sigint(int sig)
+{
+	(void)sig;
+	rl_on_new_line();
+	write(STDOUT_FILENO, "\n", 1);
+	rl_replace_line("", 0);
+	rl_redisplay();
+}
+
+void	handle_sigquit(int sig)
+{
+	(void)sig;
+}
+
+void	free_tokens(t_token *tokens)
+{
+	t_token	*tmp;
+
+	while (tokens)
+	{
+		tmp = tokens->next;
+		free(tokens->value);
+		free(tokens);
+		tokens = tmp;
+	}
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils10.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:52 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "libft/libft.h"
+#include "minishell.h"
+
+int	execute_cmdlist(t_cmdlist *commands, t_data *data)
+{
+	int			last_status;
+	t_cmdlist	*node;
+
+	last_status = 0;
+	node = commands;
+	while (node)
+	{
+		last_status = execute_andor(node->andor, data);
+		node = node->next;
+	}
+	return (last_status);
+}
+
+int	execute_andor(t_andor *list, t_data *data)
+{
+	int		result;
+	bool	should_run;
+	t_andor	*node;
+
+	result = 0;
+	should_run = true;
+	node = list;
+	while (node)
+	{
+		if (should_run)
+			result = execute_full_command(node->pipeline, data);
+		if (node->op == AND_IF)
+			should_run = (result == 0);
+		else if (node->op == OR_IF)
+			should_run = (result != 0);
+		else
+			should_run = true;
+		node = node->next;
+	}
+	return (result);
+}
+
+void	free_cmdlist(t_cmdlist *list)
+{
+	t_cmdlist	*next;
+
+	while (list)
+	{
+		next = list->next;
+		free_andor(list->andor);
+		free(list);
+		list = next;
+	}
+}
+
+void	free_andor(t_andor *andor)
+{
+	t_andor	*next;
+
+	while (andor)
+	{
+		next = andor->next;
+		free_command(andor->pipeline);
+		free(andor);
+		andor = next;
+	}
+}
+
+int	execute_builtin_with_redir(t_command *cmd, t_data *data)
+{
+	int	saved_stdout;
+	int	ret;
+
+	saved_stdout = dup(STDOUT_FILENO);
+	if (saved_stdout < 0)
+	{
+		perror("dup");
+		return (1);
+	}
+	if (handle_redirection(cmd) < 0)
+	{
+		close(saved_stdout);
+		return (1);
+	}
+	ret = execute_builtin(cmd->args, data);
+	if (dup2(saved_stdout, STDOUT_FILENO) < 0)
+	{
+		perror("dup2");
+		close(saved_stdout);
+		return (1);
+	}
+	close(saved_stdout);
+	return (ret);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils11.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/12 22:24:42 by michel            #+#    #+#             */
+/*   Updated: 2025/03/26 19:34:57 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void	free_command(t_command *cmd)
+{
+	int			i;
+	t_redir		*redir;
+	t_command	*next_pipe;
+
+	if (!cmd)
+		return ;
+	if (cmd->args)
+	{
+		i = 0;
+		while (cmd->args[i])
+		{
+			free(cmd->args[i]);
+			i++;
+		}
+		free(cmd->args);
+	}
+	while (cmd->redirs)
+	{
+		redir = cmd->redirs;
+		cmd->redirs = cmd->redirs->next;
+		if (redir->target)
+			free(redir->target);
+		free(redir);
+	}
+	next_pipe = cmd->next_pipe;
+	free(cmd);
+	free_command(next_pipe);
+}
+
+int	count_commands(t_command *pipeline)
+{
+	int	count;
+
+	count = 0;
+	while (pipeline)
+	{
+		count++;
+		pipeline = pipeline->next_pipe;
+	}
+	return (count);
+}
+
+t_command	*init_command(void)
+{
+	t_command	*cmd;
+
+	cmd = malloc(sizeof(t_command));
+	if (!cmd)
+	{
+		perror("malloc");
+		return (NULL);
+	}
+	cmd->args = NULL;
+	cmd->input = NULL;
+	cmd->output = NULL;
+	cmd->append = 0;
+	cmd->heredoc = 0;
+	cmd->subshell = false;
+	cmd->redirs = NULL;
+	cmd->next_pipe = NULL;
+	cmd->subshell_ast = NULL;
+	return (cmd);
+}
+
+int	update_env_var(t_data *data, char *key, char *value)
+{
+	t_env	*node;
+	size_t	key_len;
+
+	node = data->env;
+	key_len = ft_strlen(key);
+	while (node)
+	{
+		if (ft_strncmp(node->key, key, key_len) == 0
+			&& node->key[key_len] == '\0')
+		{
+			free(node->value);
+			node->value = ft_strdup(value);
+			return (1);
+		}
+		node = node->next;
+	}
+	return (0);
+}
+
+int	add_env_var(t_data *data, char *key, char *value)
+{
+	t_env	*new_node;
+
+	new_node = malloc(sizeof(t_env));
+	if (!new_node)
+	{
+		perror("malloc");
+		free(key);
+		free(value);
+		return (1);
+	}
+	new_node->key = key;
+	new_node->value = value;
+	new_node->next = data->env;
+	data->env = new_node;
+	return (0);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   uitls_builting.c                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 18:35:30 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:27 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+int	handle_export_arguments(char **args, t_data *data)
+{
+	int	i;
+
+	i = 1;
+	while (args[i])
+	{
+		if (process_export_argument(args[i], data))
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+int	process_export_argument(char *arg, t_data *data)
+{
+	char	*eq;
+	char	*value;
+	char	*key;
+
+	eq = ft_strchr(arg, '=');
+	key = extract_key(arg, eq);
+	value = extract_value(eq);
+	if (!eq)
+		return (0);
+	if (!key || !value)
+	{
+		perror("ft_substr/ft_strdup");
+		free(key);
+		free(value);
+		return (1);
+	}
+	if (update_env_var(data, key, value))
+		free(key);
+	else if (add_env_var(data, key, value))
+		return (1);
+	return (0);
+}
+
+char	*extract_key(char *arg, char *eq)
+{
+	size_t	key_len;
+
+	key_len = eq - arg;
+	return (ft_substr(arg, 0, key_len));
+}
+
+char	*extract_value(char *eq)
+{
+	return (ft_strdup(eq + 1));
+}
+
+void	unset_env_variable(t_env **env, char *key)
+{
+	t_env	*node;
+	t_env	*prev;
+
+	node = *env;
+	prev = NULL;
+	while (node)
+	{
+		if (ft_strcmp(node->key, key) == 0)
+		{
+			if (prev)
+				prev->next = node->next;
+			else
+				*env = node->next;
+			free_env_variable(node);
+			return ;
+		}
+		prev = node;
+		node = node->next;
+	}
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_env.c                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 18:39:45 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:31 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void	env_unset(t_env **env, const char *key)
+{
+	t_env	*node;
+	t_env	*prev;
+	size_t	key_len;
+
+	node = *env;
+	prev = NULL;
+	key_len = ft_strlen(key);
+	while (node)
+	{
+		if (ft_strncmp(node->key, key, key_len) == 0
+			&& node->key[key_len] == '\0')
+		{
+			if (prev)
+				prev->next = node->next;
+			else
+				*env = node->next;
+			free(node->key);
+			free(node->value);
+			free(node);
+			return ;
+		}
+		prev = node;
+		node = node->next;
+	}
+}
+
+int	count_env_variables(t_env *env)
+{
+	t_env	*node;
+	int		count;
+
+	count = 0;
+	node = env;
+	while (node)
+	{
+		count++;
+		node = node->next;
+	}
+	return (count);
+}
+
+char	**allocate_env_array(int count)
+{
+	char	**array;
+
+	array = malloc((count + 1) * sizeof(char *));
+	if (!array)
+	{
+		perror("malloc");
+		return (NULL);
+	}
+	return (array);
+}
+
+void	convert_env_list_to_array(t_env *env, char **array)
+{
+	int		i;
+	t_env	*node;
+	char	*tmp;
+
+	i = 0;
+	node = env;
+	while (node)
+	{
+		tmp = ft_strjoin(node->key, "=");
+		array[i] = ft_strjoin(tmp, node->value);
+		free(tmp);
+		i++;
+		node = node->next;
+	}
+	array[i] = NULL;
+}
+
+char	**env_to_array(t_env *env)
+{
+	int		count;
+	char	**array;
+
+	count = count_env_variables(env);
+	array = allocate_env_array(count);
+	if (!array)
+		return (NULL);
+	convert_env_list_to_array(env, array);
+	return (array);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_pipe.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 18:41:07 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:59 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void	close_pipeline_pipes(t_pipe_info *pi)
+{
+	int	i;
+
+	if (pi->pipes)
+	{
+		i = 0;
+		while (i < 2 * (pi->n - 1))
+		{
+			close(pi->pipes[i]);
+			i++;
+		}
+	}
+}
+
+int	wait_for_children(int n)
+{
+	int	i;
+	int	status;
+	int	last_status;
+
+	last_status = 0;
+	status = 0;
+	i = 0;
+	while (i < n)
+	{
+		wait(&status);
+		last_status = status;
+		i++;
+	}
+	return (WEXITSTATUS(last_status));
+}
+
+int	*create_pipes(int n)
+{
+	int	*pipes;
+	int	i;
+
+	if (n < 2)
+		return (NULL);
+	pipes = malloc(2 * (n - 1) * sizeof(int));
+	if (!pipes)
+		return (NULL);
+	i = 0;
+	while (i < n - 1)
+	{
+		if (pipe(&pipes[i * 2]) < 0)
+		{
+			free(pipes);
+			return (NULL);
+		}
+		i++;
+	}
+	return (pipes);
+}
+
+void	setup_pipes_for_child(int index, t_pipe_info *pi)
+{
+	if (index > 0)
+	{
+		if (dup2(pi->pipes[(index - 1) * 2], STDIN_FILENO) < 0)
+			exit(1);
+	}
+	if (index < pi->n - 1)
+	{
+		if (dup2(pi->pipes[index * 2 + 1], STDOUT_FILENO) < 0)
+			exit(1);
+	}
+}
+
+void	close_unused_pipes(t_pipe_info *pi)
+{
+	int	j;
+
+	j = 0;
+	while (j < 2 * (pi->n - 1))
+	{
+		close(pi->pipes[j]);
+		j++;
+	}
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_exec.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 18:48:50 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:36 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*get_path_env(void)
+{
+	char	*path_env;
+
+	path_env = getenv("PATH");
+	if (!path_env)
+		return (NULL);
+	return (ft_strdup(path_env));
+}
+
+char	*build_executable_path(const char *directory, const char *cmd)
+{
+	char	*temp;
+	char	*full_path;
+
+	temp = ft_strjoin(directory, "/");
+	full_path = ft_strjoin(temp, cmd);
+	free(temp);
+	return (full_path);
+}
+
+char	*search_executable_in_paths(char *paths, const char *cmd)
+{
+	char	*token;
+	char	*full_path;
+
+	token = ft_strtok(paths, ":");
+	while (token)
+	{
+		full_path = build_executable_path(token, cmd);
+		if (!full_path)
+			return (NULL);
+		if (access(full_path, X_OK) == 0)
+			return (full_path);
+		free(full_path);
+		token = ft_strtok(NULL, ":");
+	}
+	return (NULL);
+}
+
+int	save_stdin(void)
+{
+	int	fd;
+
+	fd = dup(STDIN_FILENO);
+	if (fd < 0)
+		perror("dup");
+	return (fd);
+}
+
+void	restore_stdin(int saved)
+{
+	if (dup2(saved, STDIN_FILENO) < 0)
+		perror("dup2");
+	close(saved);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_lex1.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 18:54:29 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:40 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*remove_quotes(const char *str)
+{
+	size_t	i;
+	size_t	j;
+	char	*new_str;
+
+	new_str = malloc(ft_strlen(str) + 1);
+	i = 0;
+	j = 0;
+	if (!new_str)
+		return (NULL);
+	while (str[i])
+	{
+		if (str[i] != '\'' && str[i] != '\"')
+		{
+			new_str[j] = str[i];
+			j++;
+		}
+		i++;
+	}
+	new_str[j] = '\0';
+	return (new_str);
+}
+
+void	initialize_token(t_token *token, const char *str)
+{
+	char	*raw;
+
+	raw = duplicate_token_value(str);
+	if (!raw)
+	{
+		token->value = NULL;
+		return ;
+	}
+	token->value = remove_quotes(raw);
+	free(raw);
+	token->type = determine_token_type(str);
+	token->quoted = false;
+	token->next = NULL;
+}
+
+t_token	*allocate_token(void)
+{
+	t_token	*token;
+
+	token = malloc(sizeof(t_token));
+	if (!token)
+		perror("malloc");
+	return (token);
+}
+
+char	*duplicate_token_value(const char *str)
+{
+	char	*dup;
+
+	dup = strdup(str);
+	if (!dup)
+		perror("strdup");
+	return (dup);
+}
+
+void	handle_whitespace(t_token_state *state)
+{
+	if (!state->in_single && !state->in_double
+		&& is_whitespace(state->input[state->i]))
+		return ;
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_lex2.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 18:59:27 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:44 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void	handle_quotes(t_token_state *state)
+{
+	char	c;
+
+	c = state->input[state->i];
+	if (c == '\'' && !state->in_single)
+	{
+		state->in_single = !state->in_single;
+		state->i++;
+		return ;
+	}
+	else if (c == '\"' && !state->in_double)
+	{
+		state->in_double = !state->in_double;
+		state->i++;
+		return ;
+	}
+}
+
+void	handle_escape_character(t_token_state *state)
+{
+	if (state->input[state->i] == '\\' && !state->in_single)
+	{
+		state->i++;
+		if (!state->input[state->i])
+			return ;
+	}
+}
+
+void	handle_dollar_sign(t_token_state *state, int exit_status, t_env *env)
+{
+	if (state->input[state->i] == '$' && !state->in_single)
+	{
+		if (state->input[state->i + 1] == '?')
+			handle_dollar_question(state->input, &state->i, state->buffer,
+				exit_status);
+		else
+			handle_dollar_variable(state->input, &state->i, state->buffer, env);
+	}
+}
+
+void	process_regular_character(t_token_state *state)
+{
+	char	c;
+
+	c = state->input[state->i];
+	append_to_buffer(state->buffer, (char[]){c, '\0'});
+	state->i++;
+}
+
+void	process_token_char(t_token_state *state, int exit_status, t_env *env)
+{
+	handle_whitespace(state);
+	handle_quotes(state);
+	handle_escape_character(state);
+	handle_dollar_sign(state, exit_status, env);
+	process_regular_character(state);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_lex3.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 19:01:24 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:49 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+t_token_state	initialize_token_state(const char *input)
+{
+	t_token_state	state;
+
+	state.input = input;
+	state.i = 0;
+	state.in_single = false;
+	state.in_double = false;
+	state.buffer = malloc(sizeof(t_buffer));
+	if (!state.buffer)
+	{
+		perror("malloc");
+		exit(1);
+	}
+	state.buffer->cap = 4096;
+	state.buffer->index = 0;
+	state.buffer->str = malloc(state.buffer->cap);
+	if (!state.buffer->str)
+	{
+		free(state.buffer);
+		perror("malloc");
+		exit(1);
+	}
+	return (state);
+}
+
+void	cleanup_token_state(t_token_state *state)
+{
+	free(state->buffer->str);
+	free(state->buffer);
+}
+
+void	append_token_to_list(t_token **head, t_token **tail, t_token *new_token)
+{
+	if (!*head)
+	{
+		*head = new_token;
+		*tail = new_token;
+	}
+	else
+	{
+		(*tail)->next = new_token;
+		*tail = new_token;
+	}
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:32:53 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+int	main(int argc, char **argv, char **envp)
+{
+	t_data	*data;
+
+	(void)argc;
+	(void)argv;
+	data = malloc(sizeof(t_data));
+	if (!data)
+	{
+		perror("malloc");
+		return (1);
+	}
+	data->env = env_init(envp);
+	data->exit_status = 0;
+	data->input = NULL;
+	data->tokens = NULL;
+	data->cmdlist = NULL;
+	rl_catch_signals = 0;
+	signal(SIGINT, handle_sigint);
+	signal(SIGQUIT, handle_sigquit);
+	while ((data->input = readline("minishell$> ")) != NULL)
+	{
+		if (*data->input)
+			add_history(data->input);
+		data->tokens = lexer(data->input, data->env);
+		free(data->input);
+		if (!data->tokens)
+			continue ;
+		if (!validate_tokens_adv(data->tokens))
+		{
+			ft_putendl_fd("Syntaxe invalide.\n", 2);
+			free_tokens(data->tokens);
+			continue ;
+		}
+		data->cmdlist = parse_line(data->tokens);
+		free_tokens(data->tokens);
+		if (!data->cmdlist)
+			continue ;
+		data->exit_status = execute_cmdlist(data->cmdlist, data);
+		free_cmdlist(data->cmdlist);
+	}
+	ft_putendl_fd("exit", 2);
+	rl_clear_history();
+	free_env(data->env);
+	return (data->exit_status);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   parsing.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/11 14:47:37 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/25 15:22:22 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+t_cmdlist	*create_cmdlist_node(t_token **tokens)
+{
+	t_cmdlist	*node;
+
+	node = malloc(sizeof(t_cmdlist));
+	if (!node)
+	{
+		perror("malloc");
+		return (NULL);
+	}
+	node->andor = parse_andor(tokens);
+	node->next = NULL;
+	return (node);
+}
+
+void	append_node(t_cmdlist **head, t_cmdlist **tail, t_cmdlist *node)
+{
+	if (*head == NULL)
+	{
+		*head = node;
+		*tail = node;
+	}
+	else
+	{
+		(*tail)->next = node;
+		*tail = node;
+	}
+}
+
+t_cmdlist	*parse_line(t_token *tokens)
+{
+	t_cmdlist	*head;
+	t_cmdlist	*tail;
+	t_cmdlist	*node;
+
+	if (!tokens)
+		return (NULL);
+	head = NULL;
+	tail = NULL;
+	while (tokens)
+	{
+		node = create_cmdlist_node(&tokens);
+		if (!node)
+			break ;
+		append_node(&head, &tail, node);
+		skip_semicolon(&tokens);
+	}
+	return (head);
+}
+
+t_command	*parse_command(t_token **cur)
+{
+	t_command	*cmd;
+	t_command	*sub;
+	int			argc;
+
+	init_command();
+	if (*cur && ft_strcmp((*cur)->value, "(") == 0)
+	{
+		sub = parse_subshell(cur);
+		return (sub);
+	}
+	cmd = init_command();
+	if (!cmd)
+		return (NULL);
+	argc = parse_command_arguments(cmd, cur);
+	if (argc < 0)
+		return (NULL);
+	return (cmd);
+}
+
+t_command	*parse_subshell(t_token **cur)
+{
+	t_token		*sub_tokens;
+	t_cmdlist	*sub_ast;
+	t_command	*cmd;
+
+	sub_tokens = extract_subshell_tokens(cur);
+	if (!sub_tokens)
+		return (NULL);
+	sub_ast = build_subshell_ast(sub_tokens);
+	*cur = (*cur)->next;
+	cmd = create_subshell_command(sub_ast);
+	if (!cmd)
+		return (NULL);
+	return (cmd);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_token.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/25 15:23:46 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/25 15:29:29 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+bool	update_paren(t_token *cur, int *paren_balance)
+{
+	if (ft_strcmp(cur->value, "(") == 0)
+	{
+		(*paren_balance)++;
+	}
+	else if (ft_strcmp(cur->value, ")") == 0)
+	{
+		(*paren_balance)--;
+		if (*paren_balance < 0)
+			return (false);
+	}
+	return (true);
+}
+
+bool	validate_redirection(t_token *cur)
+{
+	if (cur->type == REDIR_IN || cur->type == REDIR_OUT
+		|| cur->type == REDIR_APPEND || cur->type == HEREDOC)
+	{
+		if (!cur->next || cur->next->type != WORD)
+			return (false);
+	}
+	return (true);
+}
+
+bool	update_operator(t_token *cur, bool *prev_operator)
+{
+	if (cur->type == AND_IF || cur->type == OR_IF)
+	{
+		if (*prev_operator)
+			return (false);
+		*prev_operator = true;
+	}
+	else if (cur->type != SEMICOLON)
+	{
+		*prev_operator = false;
+	}
+	return (true);
+}
+
+bool	is_operator(t_token *token)
+{
+	return (token->type == AND_IF || token->type == OR_IF
+		|| token->type == PIPE);
+}
+
+bool	adjacent_operators(t_token *prev, t_token *cur)
+{
+	return (is_operator(prev) && is_operator(cur));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   token.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/10 18:19:06 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/25 15:29:36 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+bool	validate_tokens(t_token *tokens)
+{
+	int		paren_balance;
+	t_token	*cur;
+	bool	prev_was_operator;
+
+	paren_balance = 0;
+	cur = tokens;
+	prev_was_operator = false;
+	while (cur)
+	{
+		if (!update_paren(cur, &paren_balance))
+			return (false);
+		if (!validate_redirection(cur))
+			return (false);
+		if (!update_operator(cur, &prev_was_operator))
+			return (false);
+		cur = cur->next;
+	}
+	return (paren_balance == 0);
+}
+
+bool	check_redirection(t_token *cur)
+{
+	if (cur->type == REDIR_IN || cur->type == REDIR_OUT
+		|| cur->type == REDIR_APPEND || cur->type == HEREDOC)
+	{
+		if (!cur->next || cur->next->type != WORD)
+			return (false);
+	}
+	return (true);
+}
+
+bool	validate_tokens_adv(t_token *tokens)
+{
+	t_token	*prev;
+	t_token	*cur;
+
+	if (!tokens)
+		return (false);
+	if (is_operator(tokens))
+		return (false);
+	prev = tokens;
+	cur = tokens->next;
+	while (cur)
+	{
+		if (adjacent_operators(prev, cur))
+			return (false);
+		if (!check_redirection(cur))
+			return (false);
+		prev = cur;
+		cur = cur->next;
+	}
+	if (is_operator(prev))
+		return (false);
+	return (true);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils_lex4.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/25 16:47:55 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/25 17:53:44 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+bool	handle_in_redirect(t_token_state *state)
+{
+	if (state->input[state->i] != '<')
+		return (false);
+	if (state->input[state->i + 1] != '\0' && state->input[state->i + 1] == '<')
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, "<<");
+		state->i += 2;
+		return (true);
+	}
+	else
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, "<");
+		state->i++;
+		return (true);
+	}
+}
+
+bool	handle_out_redirect(t_token_state *state)
+{
+	if (state->input[state->i] != '>')
+		return (false);
+	if (state->input[state->i + 1] != '\0' && state->input[state->i + 1] == '>')
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, ">>");
+		state->i += 2;
+		return (true);
+	}
+	else
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, ">");
+		state->i++;
+		return (true);
+	}
+}
+
+bool	handle_pipe_operator(t_token_state *state)
+{
+	if (state->input[state->i] != '|')
+		return (false);
+	if (state->input[state->i + 1] != '\0' && state->input[state->i + 1] == '|')
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, "||");
+		state->i += 2;
+		return (true);
+	}
+	else
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, "|");
+		state->i++;
+		return (true);
+	}
+}
+
+bool	handle_amp_operator(t_token_state *state)
+{
+	if (state->input[state->i] != '&')
+		return (false);
+	if (state->input[state->i + 1] != '\0' && state->input[state->i + 1] == '&')
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, "&&");
+		state->i += 2;
+		return (true);
+	}
+	else
+	{
+		if (state->buffer->index != 0)
+			return (true);
+		append_to_buffer(state->buffer, "&");
+		state->i++;
+		return (true);
+	}
+}
+
+bool	handle_special_operators(t_token_state *state)
+{
+	if (state->in_single || state->in_double)
+		return (false);
+	if (handle_in_redirect(state))
+		return (true);
+	if (handle_out_redirect(state))
+		return (true);
+	if (handle_pipe_operator(state))
+		return (true);
+	if (handle_amp_operator(state))
+		return (true);
+	return (false);
+}

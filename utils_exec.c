@@ -5,18 +5,18 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/26 18:48:50 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:33:36 by mm-furi          ###   ########.fr       */
+/*   Created: 2025/03/25 14:12:20 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/27 15:50:23 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char	*get_path_env(void)
+char	*get_path_env(t_env *env)
 {
 	char	*path_env;
 
-	path_env = getenv("PATH");
+	path_env = env_get(env, "PATH");
 	if (!path_env)
 		return (NULL);
 	return (ft_strdup(path_env));

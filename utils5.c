@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:07:51 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:28 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 14:33:09 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,16 @@ void	add_argument_to_cmd(t_command *cmd, const char *arg, size_t *argc,
 		size_t *capacity)
 {
 	char	**tmp;
+	size_t	old_size;
 
 	if (*argc + 1 >= *capacity)
 	{
+		old_size = *capacity * sizeof(char *);
 		*capacity *= 2;
-		tmp = realloc(cmd->args, *capacity * sizeof(char *));
+		tmp = ft_realloc(cmd->args, old_size, *capacity * sizeof(char *));
 		if (!tmp)
 		{
-			perror("realloc");
+			perror("ft_realloc");
 			return ;
 		}
 		cmd->args = tmp;

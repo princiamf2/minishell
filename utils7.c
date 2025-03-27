@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 16:46:08 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:38 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 14:35:16 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,6 @@ char	*read_heredoc(const char *delim, bool quoted)
 	size_t	cap;
 	size_t	len;
 	char	*content;
-	char	*line;
 
 	(void)quoted;
 	cap = 1024;
@@ -26,19 +25,8 @@ char	*read_heredoc(const char *delim, bool quoted)
 	if (!content)
 		exit(1);
 	content[0] = '\0';
-	while (1)
-	{
-		line = readline("> ");
-		if (!line)
-			break ;
-		if (ft_strcmp(line, delim) == 0)
-		{
-			free(line);
-			break ;
-		}
-		append_line(&content, &len, &cap, line);
-		free(line);
-	}
+	while (!process_heredoc_line(delim, &content, &len, &cap))
+		;
 	return (content);
 }
 
@@ -96,8 +84,7 @@ void	get_dir_and_pattern(const char *pattern, char *dirpath, size_t size,
 
 char	**read_directory_matches(const char *dirpath, const char *pat)
 {
-	t_globinfo		info;
-	struct dirent	*entry;
+	t_globinfo	info;
 
 	info.dir = opendir(dirpath);
 	if (!info.dir)
@@ -110,34 +97,28 @@ char	**read_directory_matches(const char *dirpath, const char *pat)
 		closedir(info.dir);
 		return (NULL);
 	}
-	while ((entry = readdir(info.dir)) != NULL)
+	if (process_directory_entries(&info, dirpath, pat) == -1)
 	{
-		if (ft_strcmp(entry->d_name, ".") == 0 || ft_strcmp(entry->d_name,
-				"..") == 0)
-			continue ;
-		if (match_pattern(pat, entry->d_name))
-		{
-			if (add_match(&info, dirpath, entry->d_name) == -1)
-				break ;
-		}
+		closedir(info.dir);
+		free(info.matches);
+		return (NULL);
 	}
 	closedir(info.dir);
-	info.matches = realloc(info.matches, (info.count + 1) * sizeof(char *));
-	if (info.matches)
-		info.matches[info.count] = NULL;
-	return (info.matches);
+	return (finalize_matches(info.matches, info.count));
 }
 
 void	append_line(char **content, size_t *len, size_t *cap, const char *line)
 {
 	size_t	l_len;
 	char	*tmp;
+	size_t	old_size;
 
 	l_len = ft_strlen(line);
 	if (*len + l_len + 2 > *cap)
 	{
+		old_size = *cap;
 		*cap += l_len + 1024;
-		tmp = realloc(*content, *cap);
+		tmp = ft_realloc(*content, old_size, *cap);
 		if (!tmp)
 		{
 			free(*content);

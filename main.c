@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:50:41 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 16:34:00 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 t_data	*init_minishell(char **envp)
 {
 	t_data	*data;
+	char	cwd[PATH_MAX];
 
 	data = malloc(sizeof(t_data));
 	if (!data)
@@ -23,6 +24,14 @@ t_data	*init_minishell(char **envp)
 		exit(1);
 	}
 	data->env = env_init(envp);
+	if (!data->env)
+	{
+		if (getcwd(cwd, sizeof(cwd)))
+			env_set(&(data->env), "PWD", cwd);
+		env_set(&(data->env), "SHLVL", "1");
+		env_set(&(data->env), "_", "./minishell");
+		env_set(&(data->env), "PATH", "/usr/bin:/bin");
+	}
 	data->exit_status = 0;
 	data->input = NULL;
 	data->tokens = NULL;
@@ -39,12 +48,19 @@ void	set_minishell_signals(void)
 
 void	process_input(t_data *data)
 {
-	while ((data->input = readline("minishell$> ")) != NULL)
+	data->input = readline("minishell$> ");
+	while (data->input != NULL)
 	{
 		if (*data->input)
 			add_history(data->input);
+		if (ft_strchr(data->input, '=') != NULL)
+        {
+            process_assignement(data->input, data);
+            free(data->input);
+            data->input = readline("minishell$> ");
+            continue;
+        }
 		data->tokens = lexer(data->input, data->env);
-		free(data->input);
 		if (!data->tokens)
 			continue ;
 		if (!validate_tokens_adv(data->tokens))
@@ -59,6 +75,8 @@ void	process_input(t_data *data)
 			continue ;
 		data->exit_status = execute_cmdlist(data->cmdlist, data);
 		free_cmdlist(data->cmdlist);
+		free(data->input);
+		data->input = readline("minishell$> ");
 	}
 }
 

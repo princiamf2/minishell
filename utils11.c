@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:24:42 by michel            #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:57 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 13:41:28 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,30 +14,12 @@
 
 void	free_command(t_command *cmd)
 {
-	int			i;
-	t_redir		*redir;
 	t_command	*next_pipe;
 
 	if (!cmd)
 		return ;
-	if (cmd->args)
-	{
-		i = 0;
-		while (cmd->args[i])
-		{
-			free(cmd->args[i]);
-			i++;
-		}
-		free(cmd->args);
-	}
-	while (cmd->redirs)
-	{
-		redir = cmd->redirs;
-		cmd->redirs = cmd->redirs->next;
-		if (redir->target)
-			free(redir->target);
-		free(redir);
-	}
+	free_command_args(cmd);
+	free_command_redirs(cmd);
 	next_pipe = cmd->next_pipe;
 	free(cmd);
 	free_command(next_pipe);

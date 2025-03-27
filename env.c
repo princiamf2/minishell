@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 18:05:24 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:32:32 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/25 14:53:05 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,29 +75,16 @@ char	*env_get(t_env *env, const char *key)
 void	env_set(t_env **env, const char *key, const char *val)
 {
 	t_env	*node;
-	size_t	key_len;
 
-	node = *env;
-	key_len = ft_strlen(key);
-	while (node)
+	node = find_env_node(*env, key);
+	if (node)
 	{
-		if (ft_strncmp(node->key, key, key_len) == 0
-			&& node->key[key_len] == '\0')
-		{
-			free(node->value);
-			node->value = ft_strdup(val);
-			return ;
-		}
-		node = node->next;
-	}
-	node = malloc(sizeof(t_env));
-	if (!node)
-	{
-		perror("malloc");
+		update_node_value(node, val);
 		return ;
 	}
-	node->key = ft_strdup(key);
-	node->value = ft_strdup(val);
+	node = create_env_node2(key, val);
+	if (!node)
+		return ;
 	node->next = *env;
 	*env = node;
 }

@@ -5,55 +5,39 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/26 19:01:24 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:33:49 by mm-furi          ###   ########.fr       */
+/*   Created: 2025/03/25 14:19:44 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/25 14:36:33 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-t_token_state	initialize_token_state(const char *input)
+void	handle_dollar_sign(t_token_state *state, int exit_status, t_env *env)
 {
-	t_token_state	state;
-
-	state.input = input;
-	state.i = 0;
-	state.in_single = false;
-	state.in_double = false;
-	state.buffer = malloc(sizeof(t_buffer));
-	if (!state.buffer)
+	if (state->input[state->i] == '$' && !state->in_single)
 	{
-		perror("malloc");
-		exit(1);
+		if (state->input[state->i + 1] == '?')
+			handle_dollar_question(state->input, &state->i, state->buffer,
+				exit_status);
+		else
+			handle_dollar_variable(state->input, &state->i, state->buffer, env);
 	}
-	state.buffer->cap = 4096;
-	state.buffer->index = 0;
-	state.buffer->str = malloc(state.buffer->cap);
-	if (!state.buffer->str)
-	{
-		free(state.buffer);
-		perror("malloc");
-		exit(1);
-	}
-	return (state);
 }
 
-void	cleanup_token_state(t_token_state *state)
+void	process_regular_character(t_token_state *state)
 {
-	free(state->buffer->str);
-	free(state->buffer);
+	char	c;
+
+	c = state->input[state->i];
+	append_to_buffer(state->buffer, (char []){c, '\0'});
+	state->i++;
 }
 
-void	append_token_to_list(t_token **head, t_token **tail, t_token *new_token)
+void	process_token_char(t_token_state *state, int exit_status, t_env *env)
 {
-	if (!*head)
-	{
-		*head = new_token;
-		*tail = new_token;
-	}
-	else
-	{
-		(*tail)->next = new_token;
-		*tail = new_token;
-	}
+	handle_whitespace(state);
+	handle_quotes(state);
+	handle_escape_character(state);
+	handle_dollar_sign(state, exit_status, env);
+	process_regular_character(state);
 }

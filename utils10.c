@@ -6,11 +6,10 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:52 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/25 17:35:41 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "libft/libft.h"
 #include "minishell.h"
 
 int	execute_cmdlist(t_cmdlist *commands, t_data *data)

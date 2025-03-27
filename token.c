@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 18:19:06 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 15:29:36 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 14:20:45 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,4 +68,28 @@ bool	validate_tokens_adv(t_token *tokens)
 	if (is_operator(prev))
 		return (false);
 	return (true);
+}
+
+void	*ft_realloc(void *ptr, size_t old_size, size_t new_size)
+{
+	void	*new_ptr;
+
+	if (!ptr)
+		return (malloc(new_size));
+	if (new_size == 0)
+	{
+		free(ptr);
+		return (NULL);
+	}
+	new_ptr = malloc(new_size);
+	if (!new_ptr)
+		return (NULL);
+	if (old_size > 0)
+	{
+		if (new_size < old_size)
+			old_size = new_size;
+		ft_memcpy(new_ptr, ptr, old_size);
+	}
+	free(ptr);
+	return (new_ptr);
 }

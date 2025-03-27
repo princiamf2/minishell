@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 17:24:30 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:43 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 14:40:48 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ bool	match_pattern(const char *pattern, const char *str)
 		}
 		return (false);
 	}
-	return (*pattern == *str) && match_pattern(pattern + 1, str + 1);
+	return ((*pattern == *str) && match_pattern(pattern + 1, str + 1));
 }
 
 bool	is_redirection(t_token *token)
@@ -76,11 +76,14 @@ int	add_match(t_globinfo *info, const char *dirpath, const char *filename)
 {
 	char	*fullpath;
 	char	**tmp;
+	size_t	old_size;
 
 	if (info->count >= info->capacity)
 	{
+		old_size = info->capacity * sizeof(char *);
 		info->capacity *= 2;
-		tmp = realloc(info->matches, info->capacity * sizeof(char *));
+		tmp = ft_realloc(info->matches, old_size, info->capacity
+				* sizeof(char *));
 		if (!tmp)
 			return (-1);
 		info->matches = tmp;

@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:32 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/25 15:38:38 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,26 +60,36 @@ char	**glob_pattern(const char *pattern)
 	return (read_directory_matches(dirpath, pat));
 }
 
-void	print_env_array(char **env_array)
+int	fork_and_execute(char *exec_path, t_command *cmd, t_data *data)
 {
-	int	i;
+	pid_t	pid;
+	int		status;
 
-	i = 0;
-	if (!env_array)
+	pid = fork();
+	if (pid < 0)
 	{
-		printf("env_array est NULL\n");
-		return ;
+		perror("fork");
+		free(exec_path);
+		return (1);
 	}
-	while (env_array[i])
+	if (pid == 0)
 	{
-		printf("%s\n", env_array[i]);
-		i++;
+		if (handle_redirection(cmd) < 0)
+			exit(1);
+		if (execve(exec_path, cmd->args, env_to_array(data->env)) == -1)
+		{
+			perror("execve");
+			exit(1);
+		}
 	}
+	waitpid(pid, &status, 0);
+	if (WIFEXITED(status))
+		return (WEXITSTATUS(status));
+	return (1);
 }
 
-char	*get_executable_path(t_command *cmd)
+void	skip_semicolon(t_token **tokens)
 {
-	if (ft_strchr(cmd->args[0], '/') != NULL)
-		return (ft_strdup(cmd->args[0]));
-	return (find_excutable(cmd->args[0]));
+	if (*tokens && (*tokens)->type == SEMICOLON)
+		*tokens = (*tokens)->next;
 }

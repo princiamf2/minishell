@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 02:03:50 by michel            #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:15 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 14:39:42 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ int	read_and_write_heredoc(int fd, const char *delimiter)
 
 	while (1)
 	{
-		line = readline("> ");
+		line = readline("herdoc> ");
 		if (!line || ft_strcmp(line, delimiter) == 0)
 		{
 			free(line);
@@ -83,8 +83,19 @@ int	finalize_heredoc(int fd, char *tmp_name)
 	return (0);
 }
 
-void	skip_semicolon(t_token **tokens)
+void	print_env_array(char **env_array)
 {
-	if (*tokens && (*tokens)->type == SEMICOLON)
-		*tokens = (*tokens)->next;
+	int	i;
+
+	i = 0;
+	if (!env_array)
+	{
+		printf("env_array est NULL\n");
+		return ;
+	}
+	while (env_array[i])
+	{
+		printf("%s\n", env_array[i]);
+		i++;
+	}
 }

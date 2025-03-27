@@ -6,66 +6,56 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:06:56 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:32:49 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 16:32:52 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-t_token_type	determine_token_type(const char *str)
+t_token_state	initialize_token_state(const char *input)
 {
-	if (strcmp(str, "|") == 0)
-		return (PIPE);
-	if (strcmp(str, "&&") == 0)
-		return (AND_IF);
-	if (strcmp(str, "||") == 0)
-		return (OR_IF);
-	if (strcmp(str, ";") == 0)
-		return (SEMICOLON);
-	if (strcmp(str, ">") == 0)
-		return (REDIR_OUT);
-	if (strcmp(str, "<") == 0)
-		return (REDIR_IN);
-	if (strcmp(str, ">>") == 0)
-		return (REDIR_APPEND);
-	if (strcmp(str, "<<") == 0)
-		return (HEREDOC);
-	return (WORD);
+	t_token_state	state;
+
+	state.input = input;
+	state.i = 0;
+	state.in_single = false;
+	state.in_double = false;
+	state.buffer = malloc(sizeof(t_buffer));
+	if (!state.buffer)
+	{
+		perror("malloc");
+		exit(1);
+	}
+	state.buffer->cap = 4096;
+	state.buffer->index = 0;
+	state.buffer->str = malloc(state.buffer->cap);
+	if (!state.buffer->str)
+	{
+		free(state.buffer);
+		perror("malloc");
+		exit(1);
+	}
+	return (state);
 }
 
-t_token	*create_token(const char *str)
+void	cleanup_token_state(t_token_state *state)
 {
-	t_token	*token;
-
-	token = allocate_token();
-	if (!token)
-		return (NULL);
-	initialize_token(token, str);
-	if (!token->value)
-	{
-		free(token);
-		return (NULL);
-	}
-	return (token);
+	free(state->buffer->str);
+	free(state->buffer);
 }
 
-char	*collect_token(t_token_state *state, int exit_status, t_env *env)
+void	append_token_to_list(t_token **head, t_token **tail, t_token *new_token)
 {
-	state->buffer->index = 0;
-	while (state->input[state->i])
+	if (!*head)
 	{
-		if (!state->in_single && !state->in_double
-			&& is_whitespace(state->input[state->i]))
-			break ;
-		if (!state->in_single && !state->in_double
-			&& (state->input[state->i] == '(' || state->input[state->i] == ')'))
-			break ;
-		if (handle_special_operators(state))
-			break ;
-		process_token_char(state, exit_status, env);
+		*head = new_token;
+		*tail = new_token;
 	}
-	state->buffer->str[state->buffer->index] = '\0';
-	return (ft_strdup(state->buffer->str));
+	else
+	{
+		(*tail)->next = new_token;
+		*tail = new_token;
+	}
 }
 
 t_token	*process_tokens(t_token_state *state, t_env *env)
@@ -99,5 +89,6 @@ t_token	*lexer(const char *input, t_env *env)
 	state = initialize_token_state(input);
 	head = process_tokens(&state, env);
 	cleanup_token_state(&state);
+	expand_tokens(head, env);
 	return (head);
 }

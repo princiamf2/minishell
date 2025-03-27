@@ -5,12 +5,27 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/26 18:41:07 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:33:59 by mm-furi          ###   ########.fr       */
+/*   Created: 2025/03/25 14:09:04 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/25 14:37:15 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+
+int	create_child_process(t_command *cmd, int i, t_pipe_info *pi, t_data *data)
+{
+	pid_t	pid;
+
+	pid = fork();
+	if (pid < 0)
+	{
+		perror("fork");
+		return (-1);
+	}
+	if (pid == 0)
+		execute_child(cmd, i, pi, data);
+	return (pid);
+}
 
 void	close_pipeline_pipes(t_pipe_info *pi)
 {
@@ -45,51 +60,39 @@ int	wait_for_children(int n)
 	return (WEXITSTATUS(last_status));
 }
 
-int	*create_pipes(int n)
+int	fork_pipeline(t_command *pipeline, t_pipe_info *pi, t_data *data)
 {
-	int	*pipes;
-	int	i;
+	int			i;
+	t_command	*cmd;
+	pid_t		pid;
 
-	if (n < 2)
-		return (NULL);
-	pipes = malloc(2 * (n - 1) * sizeof(int));
-	if (!pipes)
-		return (NULL);
+	cmd = pipeline;
 	i = 0;
-	while (i < n - 1)
+	while (cmd)
 	{
-		if (pipe(&pipes[i * 2]) < 0)
-		{
-			free(pipes);
-			return (NULL);
-		}
+		pid = create_child_process(cmd, i, pi, data);
+		if (pid < 0)
+			return (-1);
+		cmd = cmd->next_pipe;
 		i++;
 	}
-	return (pipes);
+	close_pipeline_pipes(pi);
+	return (wait_for_children(pi->n));
 }
 
-void	setup_pipes_for_child(int index, t_pipe_info *pi)
+int	execute_pipeline(t_command *pipeline, t_data *data)
 {
-	if (index > 0)
-	{
-		if (dup2(pi->pipes[(index - 1) * 2], STDIN_FILENO) < 0)
-			exit(1);
-	}
-	if (index < pi->n - 1)
-	{
-		if (dup2(pi->pipes[index * 2 + 1], STDOUT_FILENO) < 0)
-			exit(1);
-	}
-}
+	int			n;
+	t_pipe_info	pi;
+	int			status;
 
-void	close_unused_pipes(t_pipe_info *pi)
-{
-	int	j;
-
-	j = 0;
-	while (j < 2 * (pi->n - 1))
-	{
-		close(pi->pipes[j]);
-		j++;
-	}
+	n = count_commands(pipeline);
+	pi.n = n;
+	pi.pipes = create_pipes(n);
+	if (n > 1 && !pi.pipes)
+		return (-1);
+	status = fork_pipeline(pipeline, &pi, data);
+	if (pi.pipes)
+		free(pi.pipes);
+	return (status);
 }

@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:21:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:34:19 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 14:30:22 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ void	append_to_buffer(t_buffer *buf, const char *s)
 	if (buf->index + len + 1 > buf->cap)
 	{
 		new_cap = buf->cap + len + 1024;
-		new_str = realloc(buf->str, new_cap);
+		new_str = ft_realloc(buf->str, buf->cap, new_cap);
 		if (!new_str)
 		{
 			free(buf->str);
@@ -74,7 +74,7 @@ void	handle_dollar_variable(const char *input, size_t *i, t_buffer *buf,
 	start = *i + 1;
 	len = 0;
 	while (input[start + len] && (isalnum(input[start + len]) || input[start
-			+ len] == '_'))
+				+ len] == '_'))
 		len++;
 	if (len)
 	{

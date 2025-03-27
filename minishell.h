@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:30:44 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 16:32:29 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,7 +142,7 @@ typedef struct s_data
 }						t_data;
 
 char					*ft_strtok(char *s, const char *delim);
-char					*find_excutable(const char *cmd);
+char					*find_excutable(const char *cmd, t_env *env);
 int						execute_command(t_command *cmd, t_data *data);
 int						ft_strcmp(const char *s1, const char *s2);
 int						is_builtins(char *cmd);
@@ -258,13 +258,13 @@ int						create_child_process(t_command *cmd, int i,
 							t_pipe_info *pi, t_data *data);
 void					close_pipeline_pipes(t_pipe_info *pi);
 int						wait_for_children(int n);
-char					*get_path_env(void);
+char					*get_path_env(t_env *env);
 char					*build_executable_path(const char *directory,
 							const char *cmd);
 char					*search_executable_in_paths(char *paths,
 							const char *cmd);
 int						save_stdin(void);
-char					*get_executable_path(t_command *cmd);
+char					*get_executable_path(t_command *cmd, t_data *data);
 int						fork_and_execute(char *exec_path, t_command *cmd,
 							t_data *data);
 int						execute_external_command(t_command *cmd, t_data *data);
@@ -285,6 +285,11 @@ void					append_token_to_list(t_token **head, t_token **tail,
 t_token					*process_tokens(t_token_state *state, t_env *env);
 void					restore_stdin(int saved);
 int						save_stdin(void);
+t_env					*find_env_node(t_env *head, const char *key);
+void					update_node_value(t_env *node, const char *val);
+t_env					*create_env_node2(const char *key, const char *val);
+int						execute_child(t_command *cmd, int index,
+							t_pipe_info *pi, t_data *data);
 int						*create_pipes(int n);
 void					skip_semicolon(t_token **tokens);
 bool					update_paren(t_token *cur, int *paren_balance);
@@ -292,9 +297,28 @@ bool					validate_redirection(t_token *cur);
 bool					update_operator(t_token *cur, bool *prev_operator);
 bool					is_operator(t_token *token);
 bool					adjacent_operators(t_token *prev, t_token *cur);
+void					add_all_matches_to_cmd(char **matches, t_command *cmd,
+							size_t *argc, size_t *capacity);
+void					free_matches(char **matches);
+bool					try_expand_glob(t_token **cur, t_command *cmd,
+							size_t *argc, size_t *capacity);
+bool					process_heredoc_line(const char *delim, char **content,
+							size_t *len, size_t *cap);
+bool					is_valid_entry(struct dirent *entry);
+int						process_directory_entries(t_globinfo *info,
+							const char *dirpath, const char *pat);
+char					**finalize_matches(char **matches, size_t count);
 bool					handle_in_redirect(t_token_state *state);
 bool					handle_out_redirect(t_token_state *state);
 bool					handle_pipe_operator(t_token_state *state);
 bool					handle_amp_operator(t_token_state *state);
 bool					handle_special_operators(t_token_state *state);
+void					free_command_args(t_command *cmd);
+void					free_command_redirs(t_command *cmd);
+void					free_pipeline(t_command *cmd);
+void					*ft_realloc(void *ptr, size_t old_size,
+							size_t new_size);
+void					process_assignement(char *input, t_data *data);
+void					expand_token(t_token *token, t_env *env);
+void					expand_tokens(t_token *tokens, t_env *env);
 #endif

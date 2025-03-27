@@ -5,12 +5,53 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/26 18:54:29 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/26 19:33:40 by mm-furi          ###   ########.fr       */
+/*   Created: 2025/03/25 14:16:19 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/25 14:17:13 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+
+t_token	*allocate_token(void)
+{
+	t_token	*token;
+
+	token = malloc(sizeof(t_token));
+	if (!token)
+		perror("malloc");
+	return (token);
+}
+
+char	*duplicate_token_value(const char *str)
+{
+	char	*dup;
+
+	dup = strdup(str);
+	if (!dup)
+		perror("strdup");
+	return (dup);
+}
+
+t_token_type	determine_token_type(const char *str)
+{
+	if (strcmp(str, "|") == 0)
+		return (PIPE);
+	if (strcmp(str, "&&") == 0)
+		return (AND_IF);
+	if (strcmp(str, "||") == 0)
+		return (OR_IF);
+	if (strcmp(str, ";") == 0)
+		return (SEMICOLON);
+	if (strcmp(str, ">") == 0)
+		return (REDIR_OUT);
+	if (strcmp(str, "<") == 0)
+		return (REDIR_IN);
+	if (strcmp(str, ">>") == 0)
+		return (REDIR_APPEND);
+	if (strcmp(str, "<<") == 0)
+		return (HEREDOC);
+	return (WORD);
+}
 
 char	*remove_quotes(const char *str)
 {
@@ -51,31 +92,4 @@ void	initialize_token(t_token *token, const char *str)
 	token->type = determine_token_type(str);
 	token->quoted = false;
 	token->next = NULL;
-}
-
-t_token	*allocate_token(void)
-{
-	t_token	*token;
-
-	token = malloc(sizeof(t_token));
-	if (!token)
-		perror("malloc");
-	return (token);
-}
-
-char	*duplicate_token_value(const char *str)
-{
-	char	*dup;
-
-	dup = strdup(str);
-	if (!dup)
-		perror("strdup");
-	return (dup);
-}
-
-void	handle_whitespace(t_token_state *state)
-{
-	if (!state->in_single && !state->in_double
-		&& is_whitespace(state->input[state->i]))
-		return ;
 }

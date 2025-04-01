@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_lex2.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:17:42 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/31 18:16:56 by michel           ###   ########.fr       */
+/*   Updated: 2025/04/01 17:00:03 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,12 @@ char	*collect_token(t_token_state *state, int exit_status, t_env *env)
 			&& (state->input[state->i] == '(' || state->input[state->i] == ')'))
 			break ;
 		if (handle_special_operators(state))
-			break ;
+		{
+			if (state->buffer->index > 0)
+				break ;
+			else
+				continue ;
+		}
 		process_token_char(state, exit_status, env);
 	}
 	state->buffer->str[state->buffer->index] = '\0';

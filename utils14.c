@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 15:39:57 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 14:38:25 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/01 15:19:20 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,10 @@ int	process_directory_entries(t_globinfo *info, const char *dirpath,
 	while (entry != NULL)
 	{
 		if (!is_valid_entry(entry))
+		{
+			entry = readdir(info->dir);
 			continue ;
+		}
 		if (match_pattern(pat, entry->d_name))
 		{
 			if (add_match(info, dirpath, entry->d_name) == -1)

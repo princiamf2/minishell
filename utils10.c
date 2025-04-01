@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/03/25 17:35:41 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/01 17:04:13 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,24 +29,18 @@ int	execute_cmdlist(t_cmdlist *commands, t_data *data)
 
 int	execute_andor(t_andor *list, t_data *data)
 {
-	int		result;
-	bool	should_run;
-	t_andor	*node;
+	int	result;
 
-	result = 0;
-	should_run = true;
-	node = list;
-	while (node)
+	result = execute_full_command(list->pipeline, data);
+	list = list->next;
+	while (list)
 	{
-		if (should_run)
-			result = execute_full_command(node->pipeline, data);
-		if (node->op == AND_IF)
-			should_run = (result == 0);
-		else if (node->op == OR_IF)
-			should_run = (result != 0);
-		else
-			should_run = true;
-		node = node->next;
+		if (list->op == AND_IF && result != 0)
+			break ;
+		if (list->op == OR_IF && result == 0)
+			break ;
+		result = execute_full_command(list->pipeline, data);
+		list = list->next;
 	}
 	return (result);
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils4.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:03:00 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 22:52:02 by michel           ###   ########.fr       */
+/*   Updated: 2025/04/01 17:16:30 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,27 +47,15 @@ int	parse_command_arguments(t_command *cmd, t_token **cur)
 	size_t	capacity;
 	size_t	argc;
 
-	capacity = 8;
-	argc = 0;
-	cmd->args = malloc(capacity * sizeof(char *));
-	if (!cmd->args)
-	{
-		free(cmd);
+	if (init_cmd_args(cmd, &capacity, &argc) == -1)
 		return (-1);
-	}
-	while (*cur && (((*cur)->type == WORD) || is_redirection(*cur)))
-	{
-		if ((*cur)->type == WORD)
-			handle_word_token(cur, cmd, &argc, &capacity);
-		else
-			parse_redirection(cmd, cur);
-	}
+	collect_cmd_args(cmd, cur, &argc, &capacity);
 	if (argc == 0)
-    {
-        free(cmd->args);
-        cmd->args = NULL;
-        return (0);
-    }
+	{
+		free(cmd->args);
+		cmd->args = NULL;
+		return (0);
+	}
 	cmd->args[argc] = NULL;
 	return ((int)argc);
 }

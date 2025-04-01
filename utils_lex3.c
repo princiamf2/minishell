@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:19:44 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 14:36:33 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/01 17:03:32 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@ void	process_regular_character(t_token_state *state)
 {
 	char	c;
 
+	if (!state->input[state->i])
+		return ;
 	c = state->input[state->i];
 	append_to_buffer(state->buffer, (char []){c, '\0'});
 	state->i++;
@@ -35,6 +37,8 @@ void	process_regular_character(t_token_state *state)
 
 void	process_token_char(t_token_state *state, int exit_status, t_env *env)
 {
+	if (!state->input[state->i])
+		return ;
 	handle_whitespace(state);
 	handle_quotes(state);
 	handle_escape_character(state);

@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 16:34:00 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/01 17:09:58 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,31 +51,7 @@ void	process_input(t_data *data)
 	data->input = readline("minishell$> ");
 	while (data->input != NULL)
 	{
-		if (*data->input)
-			add_history(data->input);
-		if (ft_strchr(data->input, '=') != NULL)
-        {
-            process_assignement(data->input, data);
-            free(data->input);
-            data->input = readline("minishell$> ");
-            continue;
-        }
-		data->tokens = lexer(data->input, data->env);
-		if (!data->tokens)
-			continue ;
-		if (!validate_tokens_adv(data->tokens))
-		{
-			ft_putendl_fd("Syntaxe invalide.\n", 2);
-			free_tokens(data->tokens);
-			continue ;
-		}
-		data->cmdlist = parse_line(data->tokens);
-		free_tokens(data->tokens);
-		if (!data->cmdlist)
-			continue ;
-		data->exit_status = execute_cmdlist(data->cmdlist, data);
-		free_cmdlist(data->cmdlist);
-		free(data->input);
+		process_line(data);
 		data->input = readline("minishell$> ");
 	}
 }

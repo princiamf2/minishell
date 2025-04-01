@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/31 17:00:55 by michel           ###   ########.fr       */
+/*   Updated: 2025/04/01 15:07:08 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ int	execute_command(t_command *cmd, t_data *data)
 	int	saved_stdin;
 	int	saved_stdout;
 	int	status;
-	int no_args_ret;
+	int	no_args_ret;
 
 	saved_stdin = save_stdin();
 	saved_stdout = dup(STDOUT_FILENO);

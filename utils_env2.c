@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:50:12 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 14:52:34 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/01 17:16:04 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,4 +47,29 @@ t_env	*create_env_node2(const char *key, const char *val)
 	node->value = ft_strdup(val);
 	node->next = NULL;
 	return (node);
+}
+
+int	init_cmd_args(t_command *cmd, size_t *capacity, size_t *argc)
+{
+	*capacity = 8;
+	*argc = 0;
+	cmd->args = malloc(*capacity * sizeof(char *));
+	if (!cmd->args)
+	{
+		free(cmd);
+		return (-1);
+	}
+	return (0);
+}
+
+void	collect_cmd_args(t_command *cmd, t_token **cur, size_t *argc,
+		size_t *capacity)
+{
+	while (*cur && (((*cur)->type == WORD) || is_redirection(*cur)))
+	{
+		if ((*cur)->type == WORD)
+			handle_word_token(cur, cmd, argc, capacity);
+		else
+			parse_redirection(cmd, cur);
+	}
 }

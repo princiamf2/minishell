@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_lex4.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 16:47:55 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/31 17:36:37 by michel           ###   ########.fr       */
+/*   Updated: 2025/04/01 17:12:54 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,6 @@ bool	handle_pipe_operator(t_token_state *state)
 		if (state->buffer->index != 0)
 			return (true);
 		append_to_buffer(state->buffer, "||");
-		printf("Opérateur || détecté\n");
 		state->i += 2;
 		return (true);
 	}
@@ -88,7 +87,6 @@ bool	handle_amp_operator(t_token_state *state)
 		if (state->buffer->index != 0)
 			return (true);
 		append_to_buffer(state->buffer, "&&");
-		printf("Opérateur && détecté\n");
 		state->i += 2;
 		return (true);
 	}

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_lex2.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:17:42 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 16:57:20 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 18:16:56 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,13 +59,13 @@ void	handle_quotes(t_token_state *state)
 	char	c;
 
 	c = state->input[state->i];
-	if (c == '\'' && !state->in_single)
+	if (c == '\'' && !state->in_double)
 	{
 		state->in_single = !state->in_single;
 		state->i++;
 		return ;
 	}
-	else if (c == '\"' && !state->in_double)
+	else if (c == '\"' && !state->in_single)
 	{
 		state->in_double = !state->in_double;
 		state->i++;

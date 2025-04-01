@@ -271,10 +271,10 @@ void	env_set(t_env **env, const char *key, const char *val)
 /*                                                        :::      ::::::::   */
 /*   execute.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 15:55:35 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 17:00:55 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -318,6 +318,7 @@ int	execute_command(t_command *cmd, t_data *data)
 	int	saved_stdin;
 	int	saved_stdout;
 	int	status;
+	int no_args_ret;
 
 	saved_stdin = save_stdin();
 	saved_stdout = dup(STDOUT_FILENO);
@@ -326,6 +327,9 @@ int	execute_command(t_command *cmd, t_data *data)
 		perror("dup");
 		return (1);
 	}
+	no_args_ret = handle_no_command_arguments(cmd, saved_stdin, saved_stdout);
+	if (no_args_ret != -1)
+		return (no_args_ret);
 	if (is_builtins(cmd->args[0]))
 		return (execute_builtin_with_redir(cmd, data));
 	status = execute_external_command(cmd, data);
@@ -961,6 +965,94 @@ void	*ft_realloc(void *ptr, size_t old_size, size_t new_size)
 	}
 	free(ptr);
 	return (new_ptr);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   uitls_builting.c                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/03/26 18:35:30 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/03/26 19:33:27 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+int	handle_export_arguments(char **args, t_data *data)
+{
+	int	i;
+
+	i = 1;
+	while (args[i])
+	{
+		if (process_export_argument(args[i], data))
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+int	process_export_argument(char *arg, t_data *data)
+{
+	char	*eq;
+	char	*value;
+	char	*key;
+
+	eq = ft_strchr(arg, '=');
+	key = extract_key(arg, eq);
+	value = extract_value(eq);
+	if (!eq)
+		return (0);
+	if (!key || !value)
+	{
+		perror("ft_substr/ft_strdup");
+		free(key);
+		free(value);
+		return (1);
+	}
+	if (update_env_var(data, key, value))
+		free(key);
+	else if (add_env_var(data, key, value))
+		return (1);
+	return (0);
+}
+
+char	*extract_key(char *arg, char *eq)
+{
+	size_t	key_len;
+
+	key_len = eq - arg;
+	return (ft_substr(arg, 0, key_len));
+}
+
+char	*extract_value(char *eq)
+{
+	return (ft_strdup(eq + 1));
+}
+
+void	unset_env_variable(t_env **env, char *key)
+{
+	t_env	*node;
+	t_env	*prev;
+
+	node = *env;
+	prev = NULL;
+	while (node)
+	{
+		if (ft_strcmp(node->key, key) == 0)
+		{
+			if (prev)
+				prev->next = node->next;
+			else
+				*env = node->next;
+			free_env_variable(node);
+			return ;
+		}
+		prev = node;
+		node = node->next;
+	}
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -1618,10 +1710,10 @@ void	handle_dollar_variable(const char *input, size_t *i, t_buffer *buf,
 /*                                                        :::      ::::::::   */
 /*   utils4.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:03:00 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 15:37:19 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 22:52:02 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1677,6 +1769,12 @@ int	parse_command_arguments(t_command *cmd, t_token **cur)
 		else
 			parse_redirection(cmd, cur);
 	}
+	if (argc == 0)
+    {
+        free(cmd->args);
+        cmd->args = NULL;
+        return (0);
+    }
 	cmd->args[argc] = NULL;
 	return ((int)argc);
 }
@@ -1806,10 +1904,10 @@ t_andor	*init_andor(t_command *pipeline)
 /*                                                        :::      ::::::::   */
 /*   utils6.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 15:38:38 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 16:10:12 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1867,7 +1965,7 @@ int	fork_and_execute(char *exec_path, t_command *cmd, t_data *data)
 {
 	pid_t	pid;
 	int		status;
-
+	
 	pid = fork();
 	if (pid < 0)
 	{
@@ -3039,10 +3137,10 @@ bool	adjacent_operators(t_token *prev, t_token *cur)
 /*                                                        :::      ::::::::   */
 /*   utils_token_expand.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 16:18:27 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 16:31:08 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 16:48:07 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -3067,13 +3165,21 @@ void	expand_token(t_token *token, t_env *env)
 
 	if (token->value && token->value[0] == '$')
 	{
+		printf("Token expandi0 : %s\n", token->value);
 		var_name = token->value + 1;
 		val = env_get(env, var_name);
 		free(token->value);
 		if (val)
+		{
+			printf("Token expandi1 : %s\n", token->value);
 			token->value = ft_strdup(val);
+		}
 		else
+		{
+			printf("Token expandi2 : %s\n", token->value);
 			token->value = ft_strdup("");
+		}
+		printf("Token expandi : %s\n", token->value);
 	}
 }
 
@@ -3085,15 +3191,33 @@ void	expand_tokens(t_token *tokens, t_env *env)
 		tokens = tokens->next;
 	}
 }
+
+int	handle_no_command_arguments(t_command *cmd, int saved_stdin, int saved_stdout)
+{
+    if (!cmd->args || !cmd->args[0])
+    {
+        if (handle_redirection(cmd) < 0)
+        {
+            close(saved_stdout);
+            return (1);
+        }
+        restore_stdin(saved_stdin);
+        if (dup2(saved_stdout, STDOUT_FILENO) < 0)
+            perror("dup2 stdout");
+        close(saved_stdout);
+        return (0);
+    }
+    return (-1);
+}
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 16:32:29 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 16:51:36 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -3408,4 +3532,5 @@ void					*ft_realloc(void *ptr, size_t old_size,
 void					process_assignement(char *input, t_data *data);
 void					expand_token(t_token *token, t_env *env);
 void					expand_tokens(t_token *tokens, t_env *env);
+int	handle_no_command_arguments(t_command *cmd, int saved_stdin, int saved_stdout);
 #endif

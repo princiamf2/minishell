@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 15:55:35 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 17:00:55 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ int	execute_command(t_command *cmd, t_data *data)
 	int	saved_stdin;
 	int	saved_stdout;
 	int	status;
+	int no_args_ret;
 
 	saved_stdin = save_stdin();
 	saved_stdout = dup(STDOUT_FILENO);
@@ -58,6 +59,9 @@ int	execute_command(t_command *cmd, t_data *data)
 		perror("dup");
 		return (1);
 	}
+	no_args_ret = handle_no_command_arguments(cmd, saved_stdin, saved_stdout);
+	if (no_args_ret != -1)
+		return (no_args_ret);
 	if (is_builtins(cmd->args[0]))
 		return (execute_builtin_with_redir(cmd, data));
 	status = execute_external_command(cmd, data);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_token_expand.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 16:18:27 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 16:47:27 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 16:48:07 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,4 +56,22 @@ void	expand_tokens(t_token *tokens, t_env *env)
 		expand_token(tokens, env);
 		tokens = tokens->next;
 	}
+}
+
+int	handle_no_command_arguments(t_command *cmd, int saved_stdin, int saved_stdout)
+{
+    if (!cmd->args || !cmd->args[0])
+    {
+        if (handle_redirection(cmd) < 0)
+        {
+            close(saved_stdout);
+            return (1);
+        }
+        restore_stdin(saved_stdin);
+        if (dup2(saved_stdout, STDOUT_FILENO) < 0)
+            perror("dup2 stdout");
+        close(saved_stdout);
+        return (0);
+    }
+    return (-1);
 }

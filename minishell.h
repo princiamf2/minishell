@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 16:32:29 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/31 16:51:36 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -321,4 +321,5 @@ void					*ft_realloc(void *ptr, size_t old_size,
 void					process_assignement(char *input, t_data *data);
 void					expand_token(t_token *token, t_env *env);
 void					expand_tokens(t_token *tokens, t_env *env);
+int	handle_no_command_arguments(t_command *cmd, int saved_stdin, int saved_stdout);
 #endif

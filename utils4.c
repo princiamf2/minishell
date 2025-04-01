@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils4.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:03:00 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 15:37:19 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/03/27 22:52:02 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,12 @@ int	parse_command_arguments(t_command *cmd, t_token **cur)
 		else
 			parse_redirection(cmd, cur);
 	}
+	if (argc == 0)
+    {
+        free(cmd->args);
+        cmd->args = NULL;
+        return (0);
+    }
 	cmd->args[argc] = NULL;
 	return ((int)argc);
 }

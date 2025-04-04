@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:19:44 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/01 17:03:32 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 16:59:29 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ void	process_regular_character(t_token_state *state)
 	if (!state->input[state->i])
 		return ;
 	c = state->input[state->i];
-	append_to_buffer(state->buffer, (char []){c, '\0'});
+	append_to_buffer(state->buffer, (char[]){c, '\0'});
 	state->i++;
 }
 
@@ -44,4 +44,30 @@ void	process_token_char(t_token_state *state, int exit_status, t_env *env)
 	handle_escape_character(state);
 	handle_dollar_sign(state, exit_status, env);
 	process_regular_character(state);
+}
+
+int	is_option_n(const char *str)
+{
+	int	i;
+
+	if (str[0] != '-')
+		return (0);
+	i = 1;
+	while (str[i])
+	{
+		if (str[i] != 'n')
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
+char	*get_first_token(const char *input)
+{
+	int	i;
+
+	i = 0;
+	while (input[i] && input[i] != ' ' && input[i] != '\t')
+		i++;
+	return (ft_substr(input, 0, i));
 }

@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/01 15:07:08 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/02 16:09:47 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,7 @@ int	execute_command(t_command *cmd, t_data *data)
 	if (dup2(saved_stdout, STDOUT_FILENO) < 0)
 		perror("dup2 stdout");
 	close(saved_stdout);
+	data->exit_status = status;
 	return (status);
 }
 

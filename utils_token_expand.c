@@ -6,11 +6,12 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 16:18:27 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/01 17:09:33 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 17:47:48 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+#include "global_vars.h"
 
 void	process_assignement(char *input, t_data *data)
 {
@@ -69,30 +70,52 @@ int	handle_no_command_arguments(t_command *cmd, int saved_stdin,
 	return (-1);
 }
 
-void	process_line(t_data *data)
+void process_line(t_data *data)
 {
-	if (*data->input)
-		add_history(data->input);
-	if (ft_strchr(data->input, '=') != NULL)
-	{
-		process_assignement(data->input, data);
-		free(data->input);
-		return ;
-	}
-	data->tokens = lexer(data->input, data->env);
-	if (!data->tokens)
-		return ;
-	if (!validate_tokens_adv(data->tokens))
-	{
-		ft_putendl_fd("Syntaxe invalide.\n", 2);
-		free_tokens(data->tokens);
-		return ;
-	}
-	data->cmdlist = parse_line(data->tokens);
-	free_tokens(data->tokens);
-	if (!data->cmdlist)
-		return ;
-	data->exit_status = execute_cmdlist(data->cmdlist, data);
-	free_cmdlist(data->cmdlist);
-	free(data->input);
+	char	*first;
+
+	first = get_first_token(data->input);
+    g_exit_status = 0;
+    if (*data->input)
+        add_history(data->input);
+    if (first)
+    {
+        if (!ft_strcmp(first, "export"))
+		{
+			process_assignement(data->input, data);
+        	free(data->input);
+			free(first);
+        	return;
+		}
+		else if (ft_strchr(data->input, '=') != NULL)
+		{
+			process_local_assignmment(data->input, data);
+            free(data->input);
+            free(first);
+            return;
+		}
+		free(first);
+    }
+    data->tokens = lexer(data->input, data->env, data);
+    if (!data->tokens)
+        return;
+    if (!validate_tokens_adv(data->tokens))
+    {
+        ft_putendl_fd("Syntaxe invalide.\n", 2);
+        free_tokens(data->tokens);
+        data->tokens = NULL;
+        data->exit_status = 2;
+        return;
+    }
+    data->cmdlist = parse_line(data->tokens);
+    free_tokens(data->tokens);
+    data->tokens = NULL;
+    if (!data->cmdlist)
+        return;
+    data->exit_status = execute_cmdlist(data->cmdlist, data);
+    if (g_exit_status == 130)
+        data->exit_status = 130;
+    free_cmdlist(data->cmdlist);
+    data->cmdlist = NULL;
+    free(data->input);
 }

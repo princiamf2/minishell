@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 15:34:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/01 14:32:58 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 15:48:36 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,11 @@ t_token	*collect_tokens_until_closing(t_token **cur)
 		*cur = (*cur)->next;
 	}
 	if (!*cur || balance != 0)
+	{
+		ft_putendl_fd("Erreur de syntaxe : parenthèse fermante manquante", 2);
+        free_tokens(start);
 		return (NULL);
+	}
 	if (prev)
 		prev->next = NULL;
 	return (start);
@@ -79,7 +83,7 @@ int	fork_and_execute(char *exec_path, t_command *cmd, t_data *data)
 		if (execve(exec_path, cmd->args, env_to_array(data->env)) == -1)
 		{
 			perror("execve");
-			exit(1);
+			exit(126);
 		}
 	}
 	waitpid(pid, &status, 0);

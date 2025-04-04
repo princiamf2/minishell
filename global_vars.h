@@ -1,37 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_atoi.c                                          :+:      :+:    :+:   */
+/*   global_vars.h                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/01 15:34:55 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/04 14:40:29 by mm-furi          ###   ########.fr       */
+/*   Created: 2025/04/02 16:36:53 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/04/04 13:59:02 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "libft.h"
-#include <stdio.h>
+#ifndef GLOBAL_VARS_H
+# define GLOBAL_VARS_H
 
-int	ft_atoi(const char *str)
-{
-	int	i;
-	int	result;
-	int	sign;
+# include <signal.h>
 
-	i = 0;
-	result = 0;
-	sign = 1;
-	while (str[i] == 32 || (str[i] >= 9 && str[i] <= 13))
-		i++;
-	if (str[i] == '-')
-		sign = -1;
-	if (str[i] == '-' || str[i] == '+')
-		i++;
-	while (str[i] >= '0' && str[i] <= '9')
-	{
-		result = result * 10 + (str[i] - '0');
-		i++;
-	}
-	return (result * sign);
-}
+extern volatile sig_atomic_t	g_exit_status;
+#endif

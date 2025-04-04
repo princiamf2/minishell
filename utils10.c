@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/04/01 17:04:13 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/02 16:13:42 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,5 +95,6 @@ int	execute_builtin_with_redir(t_command *cmd, t_data *data)
 		return (1);
 	}
 	close(saved_stdout);
+	data->exit_status = ret;
 	return (ret);
 }

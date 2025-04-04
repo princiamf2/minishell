@@ -6,11 +6,12 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 20:58:02 by michel            #+#    #+#             */
-/*   Updated: 2025/03/27 16:04:29 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 14:49:21 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
+#include "global_vars.h"
 
 char	*build_fullpath(const char *dirpath, const char *filename)
 {
@@ -52,6 +53,7 @@ void	handle_sigint(int sig)
 	write(STDOUT_FILENO, "\n", 1);
 	rl_replace_line("", 0);
 	rl_redisplay();
+	g_exit_status = 130;
 }
 
 void	handle_sigquit(int sig)
@@ -66,7 +68,8 @@ void	free_tokens(t_token *tokens)
 	while (tokens)
 	{
 		tmp = tokens->next;
-		free(tokens->value);
+		if (tokens->value)
+			free(tokens->value);
 		free(tokens);
 		tokens = tmp;
 	}

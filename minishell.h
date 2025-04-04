@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/01 17:17:45 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 17:44:19 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,6 +133,7 @@ typedef struct s_pipe_info
 typedef struct s_data
 {
 	t_env				*env;
+	t_env				*local_vars;
 	t_cmdlist			*cmdlist;
 	t_token				*tokens;
 	t_pipe_info			*pipe;
@@ -172,11 +173,11 @@ void					handle_dollar_question(const char *input, size_t *i,
 							t_buffer *buf, int exit_status);
 void					handle_dollar_variable(const char *input, size_t *i,
 							t_buffer *buf, t_env *env);
-char					*collect_token(t_token_state *state, int exit_status,
+char					*collect_token(t_token_state *state, t_data *data,
 							t_env *env);
 void					process_token_char(t_token_state *state,
 							int exit_status, t_env *env);
-t_token					*lexer(const char *input, t_env *env);
+t_token					*lexer(const char *input, t_env *env, t_data *data);
 t_cmdlist				*build_subshell_ast(t_token *tokens);
 t_token					*extract_subshell_tokens(t_token **cur);
 t_command				*create_subshell_command(t_cmdlist *sub_ast);
@@ -282,7 +283,8 @@ t_token_state			initialize_token_state(const char *input);
 void					cleanup_token_state(t_token_state *state);
 void					append_token_to_list(t_token **head, t_token **tail,
 							t_token *new_token);
-t_token					*process_tokens(t_token_state *state, t_env *env);
+t_token					*process_tokens(t_token_state *state, t_env *env,
+							t_data *data);
 void					restore_stdin(int saved);
 int						save_stdin(void);
 t_env					*find_env_node(t_env *head, const char *key);
@@ -328,4 +330,10 @@ int						init_cmd_args(t_command *cmd, size_t *capacity,
 							size_t *argc);
 void					collect_cmd_args(t_command *cmd, t_token **cur,
 							size_t *argc, size_t *capacity);
+int						builtin_exit(char **args, t_data *data);
+int						is_option_n(const char *str);
+char					*get_first_token(const char *input);
+void					local_set(t_env **local, const char *key,
+							const char *val);
+void					process_local_assignmment(char *input, t_data *data);
 #endif

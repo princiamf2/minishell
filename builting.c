@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 14:04:24 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 16:13:15 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int	execute_builtin(char **args, t_data *data)
 	if (!ft_strcmp(args[0], "env"))
 		return (builtin_env(env_to_array(data->env)));
 	if (!ft_strcmp(args[0], "exit"))
-		exit(0);
+		return (builtin_exit(args, data));
 	return (0);
 }
 
@@ -45,7 +45,7 @@ int	builtin_echo(char **args)
 
 	i = 1;
 	nline = 1;
-	if (args[i] && ft_strcmp(args[i], "-n") == 0)
+	while (args[i] &&  is_option_n(args[i]))
 	{
 		nline = 0;
 		i++;

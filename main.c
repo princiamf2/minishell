@@ -6,11 +6,14 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/01 17:09:58 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 13:59:47 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "global_vars.h"
 #include "minishell.h"
+
+volatile sig_atomic_t	g_exit_status = 0;
 
 t_data	*init_minishell(char **envp)
 {

@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:17:42 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/01 17:00:03 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/04 13:37:45 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ t_token	*create_token(const char *str)
 	return (token);
 }
 
-char	*collect_token(t_token_state *state, int exit_status, t_env *env)
+char	*collect_token(t_token_state *state, t_data *data, t_env *env)
 {
 	state->buffer->index = 0;
 	while (state->input[state->i])
@@ -46,7 +46,7 @@ char	*collect_token(t_token_state *state, int exit_status, t_env *env)
 			else
 				continue ;
 		}
-		process_token_char(state, exit_status, env);
+		process_token_char(state, data->exit_status, env);
 	}
 	state->buffer->str[state->buffer->index] = '\0';
 	return (ft_strdup(state->buffer->str));

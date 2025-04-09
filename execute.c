@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execute.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:48:36 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/02 16:09:47 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 14:18:06 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,8 +75,66 @@ int	execute_command(t_command *cmd, t_data *data)
 
 int	execute_full_command(t_command *cmd, t_data *data)
 {
-	if (cmd->next_pipe)
+	if (cmd->subshell)
+	{
+		return (execute_subshell(cmd, data));
+	}
+	else if (cmd->next_pipe)
+	{
 		return (execute_pipeline(cmd, data));
+	}
 	else
+	{
 		return (execute_command(cmd, data));
+	}
+}
+
+void	child_process_subshell(t_command *cmd, t_data *data)
+{
+	int	exit_status;
+
+	if (handle_redirection(cmd) < 0)
+		exit(1);
+	exit_status = execute_cmdlist(cmd->subshell_ast, data);
+	exit(exit_status);
+}
+
+int	parent_process_subshell(pid_t pid)
+{
+	int	status;
+
+	waitpid(pid, &status, 0);
+	if (WIFEXITED(status))
+	{
+		return (WEXITSTATUS(status));
+	}
+	else if (WIFSIGNALED(status))
+	{
+		return (128 + WTERMSIG(status));
+	}
+	else
+	{
+		return (1);
+	}
+}
+
+int	execute_subshell(t_command *cmd, t_data *data)
+{
+	pid_t	pid;
+
+	pid = fork();
+	if (pid < 0)
+	{
+		perror("minishell: fork");
+		return (1);
+	}
+	if (pid == 0)
+	{
+		child_process_subshell(cmd, data);
+	}
+	else
+	{
+		return (parent_process_subshell(pid));
+	}
+	return (1);
 }

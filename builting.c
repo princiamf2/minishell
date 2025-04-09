@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builting.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/07 14:48:15 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/04 16:13:15 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 13:31:02 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ int	builtin_echo(char **args)
 
 	i = 1;
 	nline = 1;
-	while (args[i] &&  is_option_n(args[i]))
+	while (args[i] && is_option_n(args[i]))
 	{
 		nline = 0;
 		i++;

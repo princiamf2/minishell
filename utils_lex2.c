@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_lex2.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:17:42 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/04 13:37:45 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 13:39:51 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,28 +28,75 @@ t_token	*create_token(const char *str)
 	return (token);
 }
 
-char	*collect_token(t_token_state *state, t_data *data, t_env *env)
+bool	is_paren(char c)
 {
-	state->buffer->index = 0;
-	while (state->input[state->i])
+	return (c == '(' || c == ')');
+}
+
+char	*check_initial_paren(t_token_state *state)
+{
+	char	paren_str[2];
+
+	if (!state->in_single && !state->in_double
+		&& is_paren(state->input[state->i]))
 	{
-		if (!state->in_single && !state->in_double
-			&& is_whitespace(state->input[state->i]))
-			break ;
-		if (!state->in_single && !state->in_double
-			&& (state->input[state->i] == '(' || state->input[state->i] == ')'))
-			break ;
+		paren_str[0] = state->input[state->i];
+		paren_str[1] = '\0';
+		append_to_buffer(state->buffer, paren_str);
+		state->i++;
+		state->buffer->str[state->buffer->index] = '\0';
+		return (ft_strdup(state->buffer->str));
+	}
+	return (NULL);
+}
+
+bool	should_break_collecting(t_token_state *state)
+{
+	if (!state->in_single && !state->in_double)
+	{
+		if (is_whitespace(state->input[state->i]))
+			return (true);
+		if (is_paren(state->input[state->i]))
+			return (true);
 		if (handle_special_operators(state))
 		{
-			if (state->buffer->index > 0)
-				break ;
+			if (state->buffer->index == 0)
+				return (false);
 			else
+				return (true);
+		}
+	}
+	return (false);
+}
+
+char	*finalize_collected_token(t_token_state *state)
+{
+	state->buffer->str[state->buffer->index] = '\0';
+	if (state->buffer->index == 0 && state->input[state->i] == '\0')
+		return (NULL);
+	return (ft_strdup(state->buffer->str));
+}
+
+char	*collect_token(t_token_state *state, t_data *data, t_env *env)
+{
+	char	*initial_token;
+
+	state->buffer->index = 0;
+	initial_token = check_initial_paren(state);
+	if (initial_token)
+		return (initial_token);
+	while (state->input[state->i])
+	{
+		if (should_break_collecting(state))
+		{
+			if (state->buffer->index == 0)
 				continue ;
+			else
+				break ;
 		}
 		process_token_char(state, data->exit_status, env);
 	}
-	state->buffer->str[state->buffer->index] = '\0';
-	return (ft_strdup(state->buffer->str));
+	return (finalize_collected_token(state));
 }
 
 void	handle_whitespace(t_token_state *state)

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_lex1.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:16:19 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 14:17:13 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 11:17:52 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,10 @@ t_token_type	determine_token_type(const char *str)
 		return (REDIR_APPEND);
 	if (strcmp(str, "<<") == 0)
 		return (HEREDOC);
+	if (strcmp(str, "(") == 0)
+		return (PAREN_OPEN);
+	if (strcmp(str, ")") == 0)
+		return (PAREN_CLOSE);
 	return (WORD);
 }
 

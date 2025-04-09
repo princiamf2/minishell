@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils8.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 17:24:30 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/27 14:40:48 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 13:57:46 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,25 +72,49 @@ char	*ft_strncpy(char *dest, const char *src, size_t n)
 	return (dest);
 }
 
-int	add_match(t_globinfo *info, const char *dirpath, const char *filename)
+static bool	ensure_globinfo_capacity(t_globinfo *info)
 {
-	char	*fullpath;
 	char	**tmp;
 	size_t	old_size;
+	size_t	new_capacity;
+	size_t	new_size_bytes;
 
 	if (info->count >= info->capacity)
 	{
 		old_size = info->capacity * sizeof(char *);
-		info->capacity *= 2;
-		tmp = ft_realloc(info->matches, old_size, info->capacity
-				* sizeof(char *));
+		new_capacity = info->capacity * 2;
+		if (new_capacity == 0)
+			new_capacity = 8;
+		new_size_bytes = new_capacity * sizeof(char *);
+
+		tmp = ft_realloc(info->matches, old_size, new_size_bytes);
 		if (!tmp)
-			return (-1);
+		{
+			perror("minishell: ft_realloc in add_match");
+			return (false);
+		}
 		info->matches = tmp;
+		info->capacity = new_capacity;
+	}
+	return (true);
+}
+
+int	add_match(t_globinfo *info, const char *dirpath, const char *filename)
+{
+	char	*fullpath;
+
+	if (!ensure_globinfo_capacity(info))
+	{
+		return (-1);
 	}
 	fullpath = build_fullpath(dirpath, filename);
 	if (!fullpath)
+	{
+		perror("minishell: build_fullpath in add_match");
 		return (0);
-	info->matches[info->count++] = fullpath;
+	}
+	info->matches[info->count] = fullpath;
+	info->count++;
+	info->matches[info->count] = NULL;
 	return (1);
 }

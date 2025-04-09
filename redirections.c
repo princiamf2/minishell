@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   redirections.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
-/*   Updated: 2025/04/01 15:04:38 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 13:06:02 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,12 @@ int	handle_input_redirection(t_command *cmd)
 	fd = open(cmd->input, O_RDONLY);
 	if (fd < 0)
 	{
-		perror("open input");
+		perror("minishell: open input");
 		return (-1);
 	}
 	if (dup2(fd, STDIN_FILENO) < 0)
 	{
-		perror("dub2 input");
+		perror("minishell: dup2 input");
 		close(fd);
 		return (-1);
 	}
@@ -43,12 +43,12 @@ int	handle_output_trunc_redirection(t_command *cmd)
 	fd = open(cmd->output, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd < 0)
 	{
-		perror("open output");
+		perror("minishell: open output");
 		return (-1);
 	}
 	if (dup2(fd, STDOUT_FILENO) < 0)
 	{
-		perror("dup2 output");
+		perror("minishell: dup2 output");
 		close(fd);
 		return (-1);
 	}
@@ -65,12 +65,12 @@ int	handle_output_append_redirection(t_command *cmd)
 	fd = open(cmd->output, O_WRONLY | O_CREAT | O_APPEND, 0644);
 	if (fd < 0)
 	{
-		perror("open output (append)");
+		perror("minishell: open output (append)");
 		return (-1);
 	}
 	if (dup2(fd, STDOUT_FILENO) < 0)
 	{
-		perror("dup2 output (append)");
+		perror("minishell: dup2 output (append)");
 		close(fd);
 		return (-1);
 	}
@@ -84,19 +84,19 @@ int	handle_heredoc(t_command *cmd)
 	char	*tmp_name;
 	int		ret;
 
-	if (!cmd->heredoc)
+	if (!cmd->heredoc || !cmd->input)
 		return (0);
 	fd = open_tmp_heredoc_file(&tmp_name);
 	if (fd < 0)
 	{
 		perror("open heredoc");
-		free(tmp_name);
 		return (-1);
 	}
 	ret = read_and_write_heredoc(fd, cmd->input);
 	if (ret < 0)
 	{
 		close(fd);
+		unlink(tmp_name);
 		free(tmp_name);
 		return (-1);
 	}

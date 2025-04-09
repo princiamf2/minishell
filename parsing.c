@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parsing.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 14:47:37 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/03/25 15:22:22 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 12:55:15 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,40 +62,117 @@ t_cmdlist	*parse_line(t_token *tokens)
 	return (head);
 }
 
-t_command	*parse_command(t_token **cur)
+t_command	*parse_regular_command(t_token **cur)
 {
 	t_command	*cmd;
-	t_command	*sub;
-	int			argc;
+	size_t		argc;
+	size_t		capacity;
 
-	init_command();
-	if (*cur && ft_strcmp((*cur)->value, "(") == 0)
-	{
-		sub = parse_subshell(cur);
-		return (sub);
-	}
 	cmd = init_command();
 	if (!cmd)
 		return (NULL);
-	argc = parse_command_arguments(cmd, cur);
-	if (argc < 0)
+	if (init_cmd_args(cmd, &capacity, &argc) == -1)
+	{
+		free_command(cmd);
 		return (NULL);
+	}
+	collect_cmd_args(cmd, cur, &argc, &capacity);
+	if (argc == 0 && cmd->redirs == NULL && !cmd->output && !cmd->input
+		&& !cmd->heredoc)
+	{
+		free_command(cmd);
+		return (NULL);
+	}
+	cmd->args[argc] = NULL;
 	return (cmd);
+}
+
+t_command	*parse_subshell_command(t_token **cur)
+{
+	t_command	*cmd;
+	size_t		argc;
+	size_t		capacity;
+
+	cmd = parse_subshell(cur);
+	if (!cmd)
+		return (NULL);
+	if (init_cmd_args(cmd, &capacity, &argc) == -1)
+	{
+		free_command(cmd);
+		return (NULL);
+	}
+	collect_cmd_args(cmd, cur, &argc, &capacity);
+	if (cmd->args)
+		cmd->args[argc] = NULL;
+	return (cmd);
+}
+
+t_command	*parse_command(t_token **cur)
+{
+	if (!cur || !*cur)
+		return (NULL);
+	if ((*cur)->type == PAREN_OPEN)
+	{
+		return (parse_subshell_command(cur));
+	}
+	else
+	{
+		return (parse_regular_command(cur));
+	}
+}
+
+t_token	*collect_and_validate_subshell_tokens(t_token **cur)
+{
+	t_token	*sub_tokens_head;
+
+	if (!skip_opening_paren(cur))
+	{
+		ft_putendl_fd("minishell: syntax error near unexpected token `('", 2);
+		return (NULL);
+	}
+	sub_tokens_head = collect_tokens_until_closing(cur);
+	if (!sub_tokens_head)
+	{
+		return (NULL);
+	}
+	return (sub_tokens_head);
+}
+
+t_cmdlist	*parse_subshell_tokens(t_token *sub_tokens_head)
+{
+	t_cmdlist	*sub_ast;
+
+	sub_ast = parse_line(sub_tokens_head);
+	free_tokens(sub_tokens_head);
+	if (!sub_ast)
+	{
+		ft_putendl_fd("minishell: error parsing subshell content", 2);
+		return (NULL);
+	}
+	return (sub_ast);
 }
 
 t_command	*parse_subshell(t_token **cur)
 {
-	t_token		*sub_tokens;
+	t_token		*sub_tokens_head;
 	t_cmdlist	*sub_ast;
 	t_command	*cmd;
 
-	sub_tokens = extract_subshell_tokens(cur);
-	if (!sub_tokens)
+	sub_tokens_head = collect_and_validate_subshell_tokens(cur);
+	if (!sub_tokens_head)
+	{
 		return (NULL);
-	sub_ast = build_subshell_ast(sub_tokens);
-	*cur = (*cur)->next;
+	}
+	sub_ast = parse_subshell_tokens(sub_tokens_head);
+	if (!sub_ast)
+	{
+		return (NULL);
+	}
 	cmd = create_subshell_command(sub_ast);
 	if (!cmd)
+	{
+		free_cmdlist(sub_ast);
 		return (NULL);
+	}
 	return (cmd);
 }

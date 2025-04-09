@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/04 17:44:19 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/07 14:10:29 by nicolsan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -336,4 +336,38 @@ char					*get_first_token(const char *input);
 void					local_set(t_env **local, const char *key,
 							const char *val);
 void					process_local_assignmment(char *input, t_data *data);
+int						execute_subshell(t_command *cmd, t_data *data);
+t_command				*parse_subshell_command(t_token **cur);
+t_command				*parse_regular_command(t_token **cur);
+t_cmdlist				*parse_subshell_tokens(t_token *sub_tokens_head);
+t_token					*collect_and_validate_subshell_tokens(t_token **cur);
+void					child_process_subshell(t_command *cmd, t_data *data);
+int						parent_process_subshell(pid_t pid);
+char					*check_initial_paren(t_token_state *state);
+bool					should_break_collecting(t_token_state *state);
+char					*finalize_collected_token(t_token_state *state);
+bool					handle_special_input_cases(t_data *data);
+bool					lex_and_validate_input(t_data *data);
+void					parse_execute_and_cleanup(t_data *data);
+bool					ensure_buffer_capacity(t_buffer *buf,
+							size_t additional_len);
+bool					ensure_args_capacity(t_command *cmd, size_t argc,
+							size_t *capacity);
+t_token					*duplicate_original_token(t_token *original);
+bool					should_break_subshell_loop(t_token *token,
+							int *balance);
+t_token					*finalize_subshell_collection(t_token *head,
+							t_token **cur, t_token *current_original,
+							int balance);
+t_token					*process_subshell_tokens_loop(t_token **cur,
+							int *balance_ptr, t_token **head_ptr,
+							t_token **tail_ptr);
+void					ensure_content_capacity(char **content_ptr,
+							size_t current_len, size_t *cap_ptr,
+							size_t line_len);
+size_t					get_digit_count(int n);
+void					fill_str(char *str, long num, size_t len);
+int						is_in_set(char c, const char *set);
+size_t					get_actual_length(char const *s, unsigned int start,
+							size_t len);
 #endif

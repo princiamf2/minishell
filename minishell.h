@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/07 14:10:29 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:15:59 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -172,11 +172,10 @@ size_t					skip_whitespace(const char *input, size_t i);
 void					handle_dollar_question(const char *input, size_t *i,
 							t_buffer *buf, int exit_status);
 void					handle_dollar_variable(const char *input, size_t *i,
-							t_buffer *buf, t_env *env);
-char					*collect_token(t_token_state *state, t_data *data,
-							t_env *env);
+							t_buffer *buf, t_data *data);
+char					*collect_token(t_token_state *state, t_data *data);
 void					process_token_char(t_token_state *state,
-							int exit_status, t_env *env);
+							int exit_status, t_data *data);
 t_token					*lexer(const char *input, t_env *env, t_data *data);
 t_cmdlist				*build_subshell_ast(t_token *tokens);
 t_token					*extract_subshell_tokens(t_token **cur);
@@ -277,14 +276,13 @@ void					handle_whitespace(t_token_state *state);
 void					handle_quotes(t_token_state *state);
 void					handle_escape_character(t_token_state *state);
 void					handle_dollar_sign(t_token_state *state,
-							int exit_status, t_env *env);
+							int exit_status, t_data *data);
 void					process_regular_character(t_token_state *state);
 t_token_state			initialize_token_state(const char *input);
 void					cleanup_token_state(t_token_state *state);
 void					append_token_to_list(t_token **head, t_token **tail,
 							t_token *new_token);
-t_token					*process_tokens(t_token_state *state, t_env *env,
-							t_data *data);
+t_token					*process_tokens(t_token_state *state, t_data *data);
 void					restore_stdin(int saved);
 int						save_stdin(void);
 t_env					*find_env_node(t_env *head, const char *key);
@@ -321,8 +319,8 @@ void					free_pipeline(t_command *cmd);
 void					*ft_realloc(void *ptr, size_t old_size,
 							size_t new_size);
 void					process_assignement(char *input, t_data *data);
-void					expand_token(t_token *token, t_env *env);
-void					expand_tokens(t_token *tokens, t_env *env);
+void					expand_token(t_token *token, t_env *env, t_env *local_vars);
+void					expand_tokens(t_token *tokens, t_env *env, t_env *local_vars);
 int						handle_no_command_arguments(t_command *cmd,
 							int saved_stdin, int saved_stdout);
 void					process_line(t_data *data);

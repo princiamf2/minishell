@@ -6,13 +6,13 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:19:44 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/04 16:59:29 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/09 18:10:21 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-void	handle_dollar_sign(t_token_state *state, int exit_status, t_env *env)
+void	handle_dollar_sign(t_token_state *state, int exit_status, t_data *data)
 {
 	if (state->input[state->i] == '$' && !state->in_single)
 	{
@@ -20,7 +20,7 @@ void	handle_dollar_sign(t_token_state *state, int exit_status, t_env *env)
 			handle_dollar_question(state->input, &state->i, state->buffer,
 				exit_status);
 		else
-			handle_dollar_variable(state->input, &state->i, state->buffer, env);
+			handle_dollar_variable(state->input, &state->i, state->buffer, data);
 	}
 }
 
@@ -35,14 +35,14 @@ void	process_regular_character(t_token_state *state)
 	state->i++;
 }
 
-void	process_token_char(t_token_state *state, int exit_status, t_env *env)
+void	process_token_char(t_token_state *state, int exit_status, t_data *data)
 {
 	if (!state->input[state->i])
 		return ;
 	handle_whitespace(state);
 	handle_quotes(state);
 	handle_escape_character(state);
-	handle_dollar_sign(state, exit_status, env);
+	handle_dollar_sign(state, exit_status, data);
 	process_regular_character(state);
 }
 

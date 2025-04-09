@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils9.c                                           :+:      :+:    :+:   */
+/*   utils3.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 20:58:02 by michel            #+#    #+#             */
-/*   Updated: 2025/04/04 14:49:21 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/09 18:53:11 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,14 +46,13 @@ char	*ft_strcpy(char *dest, const char *src)
 	return (dest);
 }
 
-void	handle_sigint(int sig)
+void handle_sigint(int sig)
 {
-	(void)sig;
-	rl_on_new_line();
-	write(STDOUT_FILENO, "\n", 1);
-	rl_replace_line("", 0);
-	rl_redisplay();
-	g_exit_status = 130;
+    (void)sig;
+    g_exit_status = 130;
+    rl_replace_line("", 0); // Efface la ligne en cours
+    rl_done = 1;            // Force readline à terminer et retourner
+    write(STDOUT_FILENO, "\n", 1);
 }
 
 void	handle_sigquit(int sig)

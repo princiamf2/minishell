@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/04 13:59:47 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/09 18:54:37 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ t_data	*init_minishell(char **envp)
 		env_set(&(data->env), "_", "./minishell");
 		env_set(&(data->env), "PATH", "/usr/bin:/bin");
 	}
+	data->local_vars = NULL;
 	data->exit_status = 0;
 	data->input = NULL;
 	data->tokens = NULL;
@@ -49,14 +50,29 @@ void	set_minishell_signals(void)
 	signal(SIGQUIT, handle_sigquit);
 }
 
-void	process_input(t_data *data)
+void process_input(t_data *data)
 {
-	data->input = readline("minishell$> ");
-	while (data->input != NULL)
-	{
-		process_line(data);
-		data->input = readline("minishell$> ");
-	}
+    char *line;
+
+    while (1)
+    {
+        line = readline("minishell$> ");
+        if (line == NULL && g_exit_status == 130)
+        {
+            g_exit_status = 0;
+            continue;
+        }
+        if (line == NULL)
+            break;
+        if (line[0] == '\0')
+        {
+            free(line);
+            continue;
+        }
+        add_history(line);
+        data->input = line;
+        process_line(data);
+    }
 }
 
 int	clean_minishell(t_data *data)

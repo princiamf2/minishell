@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_token_expand.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 16:18:27 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/07 13:43:17 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:43:33 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,15 +25,17 @@ void	process_assignement(char *input, t_data *data)
 	*eq = '=';
 }
 
-void	expand_token(t_token *token, t_env *env)
+void	expand_token(t_token *token, t_env *env, t_env *local_vars)
 {
 	char	*var_name;
 	char	*val;
 
-	if (token->value && token->value[0] == '$')
+	if (token->value[0] == '$')
 	{
 		var_name = token->value + 1;
 		val = env_get(env, var_name);
+		if (!val)
+			val = env_get(local_vars, var_name);
 		free(token->value);
 		if (val)
 			token->value = ft_strdup(val);
@@ -42,11 +44,11 @@ void	expand_token(t_token *token, t_env *env)
 	}
 }
 
-void	expand_tokens(t_token *tokens, t_env *env)
+void	expand_tokens(t_token *tokens, t_env *env, t_env *local_vars)
 {
 	while (tokens)
 	{
-		expand_token(tokens, env);
+		expand_token(tokens, env, local_vars);
 		tokens = tokens->next;
 	}
 }
@@ -73,13 +75,20 @@ int	handle_no_command_arguments(t_command *cmd, int saved_stdin,
 bool	handle_special_input_cases(t_data *data)
 {
 	char	*first;
+	char	*arg;
 
 	first = get_first_token(data->input);
 	if (!first)
 		return (false);
 	if (!ft_strcmp(first, "export"))
 	{
-		process_assignement(data->input, data);
+		arg = ft_strchr(data->input, ' ');
+		if (arg)
+		{
+			while (*arg == ' ')
+				arg++;
+			process_assignement(arg, data);
+		}
 		free(data->input);
 		free(first);
 		return (true);
@@ -130,8 +139,6 @@ void	parse_execute_and_cleanup(t_data *data)
 void	process_line(t_data *data)
 {
 	g_exit_status = 0;
-	if (*data->input)
-		add_history(data->input);
 	if (handle_special_input_cases(data))
 	{
 		return ;

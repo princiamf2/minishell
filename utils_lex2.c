@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_lex2.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:17:42 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/07 13:39:51 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:13:29 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,11 +73,11 @@ char	*finalize_collected_token(t_token_state *state)
 {
 	state->buffer->str[state->buffer->index] = '\0';
 	if (state->buffer->index == 0 && state->input[state->i] == '\0')
-		return (NULL);
+		return (ft_strdup(""));
 	return (ft_strdup(state->buffer->str));
 }
 
-char	*collect_token(t_token_state *state, t_data *data, t_env *env)
+char	*collect_token(t_token_state *state, t_data *data)
 {
 	char	*initial_token;
 
@@ -94,7 +94,7 @@ char	*collect_token(t_token_state *state, t_data *data, t_env *env)
 			else
 				break ;
 		}
-		process_token_char(state, data->exit_status, env);
+		process_token_char(state, data->exit_status, data);
 	}
 	return (finalize_collected_token(state));
 }

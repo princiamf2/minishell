@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils3.c                                           :+:      :+:    :+:   */
+/*   utils_lex5.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:21:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/07 13:50:17 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/04/09 18:06:01 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ void	handle_dollar_question(const char *input, size_t *i, t_buffer *buf,
 }
 
 void	handle_dollar_variable(const char *input, size_t *i, t_buffer *buf,
-		t_env *env)
+		t_data *data)
 {
 	size_t	start;
 	size_t	len;
@@ -101,9 +101,13 @@ void	handle_dollar_variable(const char *input, size_t *i, t_buffer *buf,
 			len = sizeof(var) - 1;
 		ft_strncpy(var, input + start, len);
 		var[len] = '\0';
-		val = env_get(env, var);
+		val = env_get(data->env, var);
 		if (!val)
-			val = "";
+		{
+			val = env_get(data->local_vars, var);
+			if (!val)
+				val = "";
+		}
 		append_to_buffer(buf, val);
 		*i = start + len;
 	}

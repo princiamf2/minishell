@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/10 16:06:56 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/04 13:41:16 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/04/09 18:19:22 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,7 @@ void	append_token_to_list(t_token **head, t_token **tail, t_token *new_token)
 	}
 }
 
-t_token	*process_tokens(t_token_state *state, t_env *env, t_data *data)
+t_token	*process_tokens(t_token_state *state, t_data *data)
 {
 	t_token	*head;
 	t_token	*tail;
@@ -72,7 +72,7 @@ t_token	*process_tokens(t_token_state *state, t_env *env, t_data *data)
 	{
 		state->i = i;
 		state->buffer->index = 0;
-		token = create_token(collect_token(state, data, env));
+		token = create_token(collect_token(state, data));
 		if (!token)
 			break ;
 		append_token_to_list(&head, &tail, token);
@@ -87,8 +87,8 @@ t_token	*lexer(const char *input, t_env *env, t_data *data)
 	t_token			*head;
 
 	state = initialize_token_state(input);
-	head = process_tokens(&state, env, data);
+	head = process_tokens(&state, data);
 	cleanup_token_state(&state);
-	expand_tokens(head, env);
+	expand_tokens(head, env, data->local_vars);
 	return (head);
 }

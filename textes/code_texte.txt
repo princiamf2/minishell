@@ -1,0 +1,357 @@
+Ok, j'ai compris le format. Voici la liste basée sur le code que tu as fourni. J'ai essayé de deviner le rôle de chaque fonction et fichier en gardant le style "pote dev".
+
+builtin_base.c, // Fonctions de base pour les builtins (echo, pwd, cd, env).
+builtin_echo, /* Gere le builtin 'echo'. Affiche les args, gere l'option -n pour le newline. */
+builtin_pwd, /* Gere le builtin 'pwd'. Affiche le chemin du repertoire courant. */
+builtin_cd, /* Gere le builtin 'cd'. Change de repertoire. Gere 'cd' seul (HOME). */
+builtin_env, /* Gere le builtin 'env'. Affiche les variables d'environnement fournies. */
+
+builting_dispatch.c, // Dispatch les builtins. Verifie si une cmd est un builtin et l'execute (avec/sans redir).
+is_builtins, /* Check si la commande 'cmd' est un builtin connu. Renvoie 1 si oui, 0 sinon. */
+execute_builtin, /* Appelle la bonne fonction builtin en fonction du premier arg ('args[0]'). */
+execute_builtin_with_redir, /* Execute un builtin en gerant les redirections avant/apres. Sauvegarde/restore les fds. */
+
+nuiltin_exit.c, // Gere le builtin 'exit'. Calcule le code de sortie, free la memoire et quitte.
+free_all_data, /* Libere toute la memoire allouee dans la structure t_data. */
+calculate_exit_code, /* Determine le code de sortie pour 'exit' selon les args (aucun, numerique, non-numerique). */
+builtin_exit, /* Gere le builtin 'exit'. Affiche 'exit', check args, calcule code, free tout et quitte. */
+
+builtin_export.c, // Point d'entree pour le builtin 'export' et gestion de 'export' sans args (affichage trie).
+builtin_export, /* Fonction principale pour 'export'. Appelle les helpers selon qu'il y a des args ou non. */
+handle_export_no_args, /* Gere 'export' sans arguments. Recupere l'env, le trie, et l'affiche au format declare -x. */
+print_export_formatted, /* Affiche une variable d'env au format 'declare -x'. Appelle print_export_key_value ou _print_export_key_only. */
+print_export_key_value, /* Helper pour afficher une var avec valeur (declare -x KEY="VALUE"). */
+_print_export_key_only, /* Helper pour afficher une var sans valeur assignee (declare -x KEY). */
+
+builtin_export_arg.c, // Gere les arguments passes a 'export'. Valide et traite chaque argument.
+handle_export_arguments, /* Itere sur les arguments de 'export' et appelle process_export_argument pour chacun. */
+process_export_argument, /* Traite un seul argument d'export: extrait cle/valeur, valide la cle, met a jour l'env. */
+extract_key, /* Extrait la cle (avant le '=') d'un argument d'export. */
+extract_value, /* Extrait la valeur (apres le '=') d'un argument d'export. */
+
+builtin_export_utils.c, // Fonctions utilitaires pour le traitement des arguments de 'export'.
+extract_export_kv, /* Remplit la structure t_export_kv (key, raw_value, eq) depuis un argument brut. */
+validate_export_key, /* Verifie si la cle d'export est un identifiant valide. Affiche erreur sinon. */
+update_or_add_env_var, /* Met a jour une variable existante ou l'ajoute a l'env (appelle update/add_env_var). */
+process_and_update_env, /* Orchestre la mise a jour de l'env pour export (interpretation valeur, ajout/modif). */
+
+builtin_unset.c, // Gere le builtin 'unset'. Supprime des variables d'environnement.
+builtin_unset, /* Fonction principale pour 'unset'. Appelle handle_unset_arguments si besoin. */
+handle_unset_arguments, /* Itere sur les args de 'unset', valide l'identifiant, et appelle unset_env_variable. */
+unset_env_variable, /* Supprime une variable de la liste chainee d'environnement par sa cle. */
+
+builtin_utils.c, // Utilitaires partages par plusieurs builtins (validation id, option -n, numerique, tri env, free array).
+is_valid_identifier, /* Verifie si une chaine est un identifiant shell valide (pour export/unset). */
+is_option_n, /* Check si l'argument est une option -n (potentiellement -nnnn...). Pour echo. */
+is_numeric, /* Verifie si la chaine represente un nombre (pour exit). */
+compare_env_vars, /* Fonction de comparaison pour qsort, pour trier l'env pour 'export'. */
+free_env_array, /* Libere un tableau de chaines (typiquement le resultat de env_to_array). */
+
+utils.c, // Fonctions de nettoyage pour les structures principales (command, cmdlist, andor, tokens).
+free_command, /* Libere une structure t_command et ses sous-elements (args, redirs, subshell...). Recursif pour les pipes. */
+free_cmdlist, /* Libere une liste chainee de t_cmdlist (appellant free_andor). */
+free_andor, /* Libere une liste chainee de t_andor (appellant free_command). */
+free_tokens, /* Libere une liste chainee de t_token. */
+
+cleanup_utils.c, // Autres utilitaires de nettoyage specifiques (args, redirs, env list, pipeline, str array).
+free_command_args, /* Libere le tableau d'arguments (cmd->args) d'une commande. */
+free_command_redirs, /* Libere la liste chainee de redirections (cmd->redirs) d'une commande. */
+free_env, /* Libere la liste chainee de l'environnement (t_env). */
+free_pipeline, /* Libere une sequence de commandes liees par next_pipe (un pipeline). */
+free_str_array, /* Libere un tableau de chaines generique. */
+
+env_add_remove.c, // Fonctions pour ajouter/supprimer/creer des noeuds dans la liste chainee d'env.
+env_unset, /* Supprime une variable de la liste d'env par sa cle (similaire a unset_env_variable). */
+create_env_node2, /* Cree un nouveau noeud t_env avec cle et valeur donnees. */
+add_env_var, /* Ajoute une nouvelle variable (noeud t_env) au debut de la liste d'env de data. */
+free_env_variable, /* Libere un seul noeud t_env (cle, valeur, structure). */
+
+env_init.c, // Initialisation de la liste chainee d'environnement a partir de envp.
+env_init, /* Cree la liste chainee d'env initiale a partir du tableau envp du main. */
+create_env_node, /* Cree un noeud t_env a partir d'une entree 'KEY=VALUE' de envp. */
+add_env_node, /* Ajoute un noeud t_env existant au debut de la liste. */
+env_get, /* Recherche une variable dans la liste d'env par sa cle et retourne sa valeur. */
+env_set, /* Definit/met a jour une variable dans la liste d'env. Cree le noeud si inexistant. */
+
+env_update.c, // Fonctions pour trouver et mettre a jour des variables dans la liste d'env.
+find_env_node, /* Trouve un noeud t_env dans la liste par sa cle. */
+update_node_value, /* Met a jour la valeur d'un noeud t_env existant. */
+update_env_var, /* Cherche et met a jour la valeur d'une variable dans data->env. Renvoie 1 si trouvee/maj, 0 sinon. */
+
+utils_env.c, // Utilitaires pour l'environnement, notamment conversion liste chainee -> tableau de chaines.
+count_env_variables, /* Compte le nombre de variables dans la liste chainee d'env. */
+allocate_env_array, /* Alloue la memoire pour le tableau de chaines de l'environnement. */
+format_env_node_to_string, /* Formate un noeud t_env en chaine "KEY=VALUE". */
+convert_env_list_to_array, /* Remplit le tableau de chaines a partir de la liste chainee d'env. */
+env_to_array, /* Convertit la liste chainee d'env en tableau de chaines (comme envp). */
+
+execute.c, // Gestion de l'execution des commandes externes (recherche path, execution).
+find_excutable, /* Trouve le chemin executable d'une commande via le PATH. (Attention typo 'excutable'). */
+get_executable_path, /* Obtient le chemin complet de l'executable (absolu ou via PATH). */
+handle_exec_path_not_found, /* Gere le cas ou l'executable n'est pas trouve (affiche erreur, restaure fds). */
+execute_external_command, /* Execute une commande externe (non-builtin). Gere les redirections et fork. */
+
+exec_fork.c, // Fonctions pour forker et executer une commande dans un processus enfant.
+fork_and_execute, /* Fork, execute la cmd dans l'enfant (avec setup redir interne), attend dans le parent. */
+child_process_exec_no_redir, /* Processus enfant : execute la commande via execve (sans setup redir interne). */
+fork_and_execute_no_redir, /* Fork, execute dans l'enfant (sans setup redir interne), attend dans le parent. */
+child_process_exec, /* Processus enfant : setup les redirections PUIS execute la commande via execve. */
+parent_process_wait, /* Processus parent : attend la fin du processus enfant et recupere le status. */
+
+cmd_execution.c, // Logique principale d'execution : gere cmdlist, operateurs && ||, pipelines, commandes simples.
+execute_cmdlist, /* Execute une liste de commandes separees par ';'. (Note: gere plutot la liste de t_cmdlist). */
+execute_andor, /* Execute une sequence de commandes liees par && ou ||. */
+execute_full_command, /* Point d'entree pour executer une 'partie' de commande (subshell, pipeline, ou simple). */
+execute_command, /* Execute une commande simple (ni subshell, ni partie d'un pipe ici). Gere fds et no-args. */
+dispatch_execution, /* Aiguille vers l'execution builtin (avec redir) ou externe. */
+
+exec_path_utils.c, // Utilitaires pour la recherche de chemins d'executables dans le PATH.
+get_path_env, /* Recupere la valeur de la variable d'environnement PATH. */
+build_executable_path, /* Construit un chemin complet (directory/cmd). */
+search_executable_in_paths, /* Cherche un executable dans les repertoires du PATH. */
+
+exec_pipe.c, // Logique pour creer les pipes, forker les processus enfants et gerer l'execution en pipeline.
+create_child_process, /* Fork un processus enfant pour une commande du pipeline. */
+fork_pipeline, /* Fork tous les enfants pour le pipeline, ferme les pipes cote parent, attend les enfants. */
+execute_pipeline, /* Orchestre l'execution d'un pipeline complet (compte cmds, cree pipes, fork, attend). */
+create_pipes, /* Cree les n-1 pipes necessaires pour n commandes. */
+execute_child, /* Code execute par chaque enfant du pipeline : setup pipes, ferme inutiles, gere redir, execute cmd. */
+
+execute_pipe.c, // Utilitaires pour l'execution de pipeline (setup/fermeture pipes, attente enfants).
+setup_pipes_for_child, /* Configure les entrees/sorties standard de l'enfant pour utiliser les pipes (dup2). */
+close_unused_pipes, /* Ferme tous les descripteurs de fichiers des pipes (dans l'enfant apres dup2). */
+close_pipeline_pipes, /* Ferme tous les descripteurs de fichiers des pipes (dans le parent apres fork). */
+wait_for_children, /* Attend la fin de n processus enfants. Retourne le status du dernier. */
+execute_builtin_or_command, /* Execute un builtin ou une commande externe dans un enfant (pour pipeline/subshell), puis exit(). */
+
+exec_redir_setup.c, // Utilitaires pour la gestion des descripteurs de fichiers (sauvegarde/restauration STDIN/STDOUT).
+handle_no_command_arguments, /* Gere le cas special ou il n'y a pas de commande mais des redirections. */
+save_original_fds, /* Sauvegarde les descripteurs de fichiers originaux de STDIN et STDOUT via dup. */
+restore_original_fds, /* Restaure les descripteurs de fichiers originaux de STDIN et STDOUT via dup2. */
+restore_stdin, /* Restaure seulement STDIN a partir d'un fd sauvegarde. */
+
+exec_subshell.c, // Gestion de l'execution des commandes en subshell.
+execute_subshell, /* Execute une commande en subshell (fork, execution AST interne, attente). */
+child_process_subshell, /* Processus enfant pour subshell : gere redir, execute l'AST du subshell via execute_cmdlist, exit(). */
+parent_process_subshell, /* Processus parent pour subshell : attend l'enfant et retourne son status correctement. */
+
+parse_pipeline.c, // Fonctions pour gerer l'expansion des jokers (globbing, *) pendant le parsing.
+try_expand_glob, /* Tente une expansion de joker (*). Si ca matche, ajoute les resultats a la commande. */
+glob_pattern, /* Point d'entree pour le globbing: separe repertoire/pattern, cherche les correspondances. */
+get_dir_and_pattern, /* Separe un pattern (ex: 'src/*.c') en repertoire ('src') et pattern reel ('*.c'). */
+read_directory_matches, /* Lit un repertoire et trouve les entrees qui matchent le pattern via readdir/match_pattern. */
+match_pattern, /* Verifie si une chaine correspond a un pattern simple avec joker (*). Recursif. */
+
+utils2.c, // Utilitaires divers (capacite globinfo, ajout match, finalisation matches, ajout a cmd, free matches). Support pour globbing.
+ensure_globinfo_capacity, /* S'assure que le tableau t_globinfo.matches a assez de place. Realloue si besoin. */
+add_match, /* Ajoute un fichier correspondant (match) a la liste dans t_globinfo. Construit le chemin complet. */
+finalize_matches, /* Realloue le tableau de resultats du globbing a la taille exacte finale. */
+add_all_matches_to_cmd, /* Ajoute tous les fichiers trouves par globbing aux arguments de la commande. */
+free_matches, /* Libere le tableau de chaines retourne par le globbing. */
+
+heredoc_buffer_utils.c, // Utilitaires pour le traitement des entrees de repertoire (globbing). Nom de fichier peut-etre trompeur.
+is_valid_entry, /* Verifie si une entree de repertoire est valide (ignore '.' et '..'). */
+process_directory_entries, /* Itère sur les entrees d'un repertoire (via readdir), valide, et ajoute si ca matche le pattern (globbing). */
+
+heredoc_file.c, // Gestion des here-documents (<<) en utilisant des fichiers temporaires.
+generate_tmp_name, /* Genere un nom de fichier temporaire unique pour le heredoc (/tmp/minishell_heredoc_X). */
+open_tmp_heredoc_file, /* Ouvre un fichier temporaire pour stocker le contenu du heredoc. Unlink avant. */
+process_heredoc_input_line, /* Lit une ligne pour le heredoc (readline), check le delimiteur, ecrit dans le fichier tmp. */
+read_and_write_heredoc, /* Lit l'entree du heredoc ligne par ligne jusqu'au delimiteur et l'ecrit dans fd. Interprete le delimiteur. */
+finalize_heredoc, /* Finalise le heredoc : ferme/rouvre le fichier tmp, le lie a STDIN via dup2, supprime le fichier tmp via unlink. */
+
+heredoc_memo.c, // Lecture de heredoc, stockage en memoire (alternative a fichier tmp?).
+read_heredoc, /* Lit le contenu d'un heredoc jusqu'au delimiteur et le stocke en memoire dans un buffer dynamique. */
+process_heredoc_line, /* Traite une seule ligne lue pour le heredoc (check delim, append au buffer memoire). */
+append_line, /* Ajoute une ligne au buffer memoire 'content', gere la reallocation si besoin. */
+ensure_content_capacity, /* S'assure que le buffer memoire pour heredoc a assez de place, realloue si besoin via ft_realloc. */
+
+utils_lex5.c, // Utilitaires pour le lexer (gestion espaces, buffer dynamique).
+is_whitespace, /* Verifie si un caractere est un espace blanc (espace ou tabulation). */
+skip_whitespace, /* Avance l'index 'i' pour sauter les espaces blancs dans l'input. */
+ensure_buffer_capacity, /* Realloue le buffer interne (t_buffer) du lexer si necessaire via ft_realloc. */
+append_to_buffer, /* Ajoute une chaine au buffer interne du lexer, en verifiant la capacite. */
+
+utils_lex3.c, // Logique de traitement des caracteres pour le lexer (quotes, echappement, dollar).
+process_token_char, /* Traite un caractere lors du lexing, en tenant compte du contexte (quotes, $, \\). Appelle les handlers specifiques. */
+process_regular_character, /* Ajoute un caractere normal au buffer du token en cours. */
+handle_whitespace, /* Gere les espaces blancs pendant le lexing (pertinent hors quotes pour separer tokens). */
+handle_quotes, /* Gere les ' et ". Ajoute au buffer et change l'etat in_single/in_double du state. */
+handle_escape_character, /* Gere le caractere d'echappement \\. Ajoute \\ et le caractere suivant au buffer (si hors single quote). */
+
+utils_lex2.c, // Collecte de tokens, gestion operateurs speciaux et parentheses pour le lexer.
+is_paren, /* Verifie si un caractere est une parenthese ouvrante ou fermante. */
+check_initial_paren, /* Si l'input courant commence par '(' ou ')', cree un token special immediatement. */
+should_break_collecting, /* Decide si on doit arreter de collecter des caracteres pour le token actuel (espace, operateur, parenthese hors quotes). */
+finalize_collected_token, /* Finalise et retourne la chaine du token a partir du buffer interne. */
+collect_token, /* Boucle principale pour assembler les caracteres d'un seul token jusqu'a un separateur. */
+
+lexer_expand_var.c, // Gestion de l'expansion des variables ($VAR, $?) pendant le lexing (dans collect_token).
+handle_dollar_sign, /* Detecte un '$' (hors single quotes) et appelle le handler approprie ($? ou $VAR). */
+handle_dollar_question, /* Gere le cas '$?'. Ajoute le dernier code de sortie (data->exit_status) au buffer. */
+handle_dollar_variable, /* Gere le cas '$VAR'. Extrait VAR, cherche sa valeur (env puis local), l'ajoute au buffer. */
+extract_variable_name, /* Extrait le nom de variable (alphanum + _) apres un '$'. */
+find_variable_value, /* Cherche la valeur d'une variable d'abord dans l'env (data->env), puis dans les variables locales (data->local_vars). */
+
+lexer_main.c, // Point d'entree principal du lexer et boucle de traitement des tokens.
+initialize_token_state, /* Initialise la structure d'etat (t_token_state) utilisee par le lexer. Alloue le buffer. */
+cleanup_token_state, /* Libere la memoire allouee pour l'etat du lexer (le buffer interne). */
+process_token_loop_step, /* Effectue une etape de la boucle principale: collecte un token, le cree, l'ajoute a la liste, saute les espaces. */
+process_tokens, /* Boucle principale qui genere la liste chainee de tokens a partir de l'input. */
+lexer, /* Fonction principale du lexer: initialise, genere les tokens via process_tokens, nettoie, et fait l'expansion post-lexing via expand_tokens. */
+
+lexer_op_1.c, // Detection et gestion des operateurs speciaux (redirections <, <<, >, >>) pendant le lexing.
+handle_in_redirect, /* Detecte et gere les redirections d'entree '<' et '<<' comme tokens separes. */
+handle_out_redirect, /* Detecte et gere les redirections de sortie '>' et '>>' comme tokens separes. */
+handle_special_operators, /* Point d'entree pour detecter tous les operateurs speciaux (|, &, ;, <, >) comme tokens separes. */
+
+lexer_op_2.c, // Detection et gestion des operateurs speciaux (|, ||, &, &&, ;) pendant le lexing.
+handle_pipe_operator, /* Detecte et gere les operateurs pipe '|' et '||' comme tokens separes. */
+handle_amp_operator, /* Detecte et gere les operateurs '&' et '&&' comme tokens separes. */
+handle_semicolon_operator, /* Detecte et gere l'operateur point-virgule ';' comme token separe. */
+
+exit.c, // Gestion des variables locales du shell (assignations type VAR=valeur). Nom de fichier peut-etre mal choisi.
+process_local_assignmment, /* Traite une assignation de variable locale (ex: "VAR=value") trouee dans l'input. */
+local_set, /* Definit ou met a jour une variable dans la liste des variables locales (data->local_vars). */
+
+main.c, // Point d'entree principal du minishell, initialisation, boucle de lecture, nettoyage.
+init_minishell, /* Initialise la structure t_data principale, l'environnement (envp ou par defaut), les variables locales. */
+process_input, /* Boucle principale: lit l'entree utilisateur avec readline, gere historique, appelle process_line. */
+clean_minishell, /* Nettoie les ressources (historique readline, memoire t_data) avant de quitter. */
+main, /* Fonction main: initialise, configure signaux, lance boucle input, nettoie et quitte avec le dernier exit_status. */
+
+command_assembly.c, // Parsing des operateurs logiques AND (&&) et OR (||) entre les pipelines.
+parse_andor_append, /* Helper pour parser le pipeline apres &&/|| et ajouter un noeud t_andor a la liste. */
+parse_andor, /* Parse une sequence de pipelines connectes par des operateurs && ou ||. Retourne un t_andor*. */
+append_andor, /* Ajoute un noeud t_andor a la fin d'une liste existante. (Semble inutilise ?). */
+init_andor, /* Initialise un nouveau noeud t_andor avec un pipeline donne. */
+
+utils_env2.c, // Utilitaires pour le parsing des arguments de commande (init, collecte, capacite). Nom fichier trompeur.
+init_cmd_args, /* Initialise le tableau d'arguments cmd->args d'une commande (alloue memoire initiale). */
+collect_cmd_args, /* Collecte les arguments (WORD) et gere les redirections pour une commande. Boucle sur les tokens concernes. */
+handle_word_token, /* Traite un token WORD: tente globbing si pas quote, sinon ajoute comme argument simple. */
+ensure_args_capacity, /* S'assure que cmd->args a assez de place pour un nouvel argument. Realloue via ft_realloc si besoin. */
+add_argument_to_cmd, /* Ajoute un argument final (apres interpretation via interpret_raw_value) a cmd->args. */
+
+parse_command.c, // Parse une commande simple (mots + redirs) ou un subshell.
+parse_command, /* Point d'entree pour parser une commande. Aiguille vers subshell ou reguliere. */
+parse_regular_command, /* Parse une commande standard (pas un subshell). Init struct, collecte args/redirs. */
+init_regular_command_struct, /* Initialise la structure t_command pour une commande reguliere. */
+populate_and_finalize_command, /* Remplit la commande avec ses arguments/redirections via collect_cmd_args et finalise le tableau args. */
+parse_subshell_command, /* Parse une commande qui est un subshell '()', puis gere les redirs eventuelles apres ')'. */
+
+parse_inter.c, // Interpretation des chaines (suppression quotes, gestion echappements \).
+interpret_raw_value, /* Interprete une valeur brute (token.value) pour enlever quotes externes et traiter escapes internes (si double quotes ou pas de quotes). */
+get_interp_params, /* Determine si la chaine est quotee (' ou ") et definit les indices start/end pour l'interpretation. */
+process_char_for_interpretation, /* Traite un caractere pendant l'interpretation (gestion special si \\ selon contexte de quotes). */
+interpret_and_copy, /* Boucle principale d'interpretation: copie/interprete les caracteres dans le buffer resultat. */
+
+parse_main.c, // Logique principale du parser: transforme la liste de tokens en arbre de commandes (cmdlist -> andor -> pipeline -> command).
+create_cmdlist_node, /* Cree un noeud t_cmdlist en parsant une sequence 'andor' a partir des tokens courants. */
+append_node, /* Ajoute un noeud t_cmdlist a la fin de la liste (gestion head/tail pour efficacite). */
+validate_token_after_andor, /* Verifie la syntaxe apres une sequence and/or (attend ';' ou fin, erreur si autre chose ou ';;'). */
+parse_and_append_cmdlist_node, /* Orchestre la creation et l'ajout d'un noeud cmdlist, avec validation syntaxique. */
+parse_line, /* Fonction principale du parsing: transforme la liste de tokens en cmdlist complet. */
+
+parse_pipeline.c, // Parsing des pipelines (commandes reliees par '|').
+link_pipeline_commands, /* Boucle pour parser et lier les commandes successives d'un pipeline via le champ next_pipe. */
+parse_pipeline, /* Parse une sequence de commandes connectees par des pipes '|'. Retourne la premiere commande du pipeline. */
+
+parse_redirection.c, // Parsing specifique des operateurs de redirection (<, >, >>, <<) et maj de la structure t_command.
+parse_redirection, /* Gere un token de redirection: identifie le type, recupere la cible, appelle le handler approprie. Avance le curseur de tokens. */
+handle_redir_output, /* Traite les redirections de sortie ('>', '>>'). Met a jour cmd->output/append apres interpretation de la cible. */
+handle_redir_input, /* Traite la redirection d'entree ('<'). Met a jour cmd->input apres interpretation de la cible. */
+handle_redir_heredoc, /* Traite le heredoc ('<<'). Met a jour cmd->input (delimiteur brut) et cmd->heredoc = 1. */
+
+parse_subshell.c, // Logique de parsing pour les commandes en subshell (...).
+parse_subshell, /* Parse un subshell: extrait les tokens internes, les parse en AST (via parse_line), cree la cmd subshell. */
+collect_and_validate_subshell_tokens, /* Extrait les tokens a l'interieur d'un subshell (entre '(' et ')') et valide l'equilibrage des parentheses. */
+parse_subshell_tokens, /* Parse la liste de tokens extraite d'un subshell pour creer son AST (t_cmdlist). Free les tokens extraits apres. */
+extract_subshell_tokens, /* Extrait les tokens entre parentheses pour un subshell. (Semble etre un doublon partiel de collect_and_validate...). */
+create_subshell_command, /* Cree la structure t_command pour representer un subshell, en liant l'AST interne. */
+
+subshell_exec_utils.c, // Utilitaires pour la collecte de tokens lors du parsing de subshells. (Nom de fichier trompeur).
+finalize_subshell_collection, /* Finalise la collecte de tokens du subshell: check balance final, avance curseur principal, retourne tokens collectes. */
+process_subshell_tokens_loop, /* Boucle pour copier les tokens a l'interieur des parentheses du subshell, gere le niveau d'imbrication. */
+collect_tokens_until_closing, /* Collecte une copie des tokens situes entre parentheses appairees. Gere l'imbrication. */
+should_break_subshell_loop, /* Met a jour le compteur de parentheses et determine si on a trouve la ')' fermante correspondante. */
+
+parse_subshell_utils.c, // Autres utilitaires pour le parsing de subshells (sauter '(', dupliquer token).
+skip_opening_paren, /* Avance le curseur de token pour sauter une parenthese ouvrante. */
+duplicate_original_token, /* Cree une copie independante (deep copy) d'un token existant. */
+
+utils_parser.c, // Utilitaires generaux pour le parser.
+build_subshell_ast, /* Construit l'AST pour un subshell en appelant parse_line sur ses tokens internes. (Wrapper). */
+parse_command_arguments, /* Parse les arguments d'une commande (init + collecte). (Semble redondant avec la logique de collect_cmd_args?). */
+
+process_line.c, // Traitement de haut niveau d'une ligne d'entree (lexing, validation, parsing, execution).
+process_line, /* Orchestre tout le traitement d'une ligne: lex, valide, parse, execute, nettoie (free input, etc.). */
+lex_and_validate_input, /* Effectue le lexing (lexer) et la validation syntaxique des tokens (validate_tokens_adv). */
+parse_execute_and_cleanup, /* Appelle le parser (parse_line), l'executeur (execute_cmdlist), puis nettoie les structures AST et tokens. */
+handle_special_input_cases, /* Gere des cas speciaux d'input (potentiellement vide, commentaires...). Ici, retourne toujours false. */
+
+redirections.c, // Implementation des handlers pour les differentes redirections d'E/S au moment de l'execution.
+handle_input_redirection, /* Gere la redirection d'entree '<' a l'exec. Ouvre fichier, dup2 vers STDIN. */
+handle_output_trunc_redirection, /* Gere la redirection de sortie '>' (trunc) a l'exec. Ouvre/cree fichier, dup2 vers STDOUT. */
+handle_output_append_redirection, /* Gere la redirection de sortie '>>' (append) a l'exec. Ouvre/cree fichier, dup2 vers STDOUT. */
+handle_heredoc, /* Gere la redirection heredoc '<<' a l'exec via un fichier temporaire. */
+handle_redirection, /* Point d'entree pour appliquer toutes les redirections (heredoc d'abord, puis input, puis output) avant d'executer une commande. */
+
+utils3.c, // Utilitaires pour la gestion des signaux (SIGINT, SIGQUIT).
+set_minishell_signals, /* Configure les gestionnaires de signaux pour SIGINT (handle_sigint) et SIGQUIT (handle_sigquit). Desactive ceux de readline. */
+handle_sigint, /* Gestionnaire pour SIGINT (Ctrl+C). Met a jour g_exit_status, interagit avec readline pour nouvelle ligne. */
+handle_sigquit, /* Gestionnaire pour SIGQUIT (Ctrl+\). Actuellement ignore (ne fait rien). */
+
+token.c, // Logique de validation de la sequence de tokens (syntax check post-lexing).
+check_redirection, /* Verifie si un token de redirection est suivi d'un token WORD. */
+validate_tokens_adv, /* Validation avancee de la syntaxe des tokens (operateurs debut/fin/adjacents, redirs...). */
+is_operator, /* Verifie si un token est un operateur logique (&&, ||) ou pipe (|). */
+adjacent_operators, /* Verifie si deux tokens adjacents sont tous les deux des operateurs (definis par is_operator). */
+
+utils_token.c, // Autres utilitaires pour les tokens, potentiellement validation (parentheses, operateurs).
+update_paren, /* Met a jour le compteur d'equilibrage des parentheses lors du parcours des tokens. */
+validate_redirection, /* Valide la syntaxe d'une redirection (doit etre suivie d'un WORD). Semble identique a check_redirection. */
+update_operator, /* Met a jour l'etat indiquant si le token precedent etait un operateur logique/pipe. */
+validate_tokens, /* Fonction de validation des tokens (equilibre parentheses, redirs, operateurs). (Semble etre une version moins complete que validate_tokens_adv?). */
+
+token_create.c, // Fonctions pour creer et initialiser les structures de token.
+create_token, /* Cree et initialise un nouveau token a partir d'une chaine brute (alloue, initialise). */
+allocate_token, /* Alloue la memoire pour une structure t_token. */
+duplicate_token_value, /* Duplique la chaine de valeur d'un token via strdup. */
+determine_token_type, /* Determine le type (enum e_token_type) d'un token en fonction de sa valeur chaine (strcmp). */
+initialize_token, /* Initialise les champs d'un token (value via strdup, type via determine..., quoted based on start/end chars). */
+
+token_expand.c, // Expansion des variables $VAR *apres* le lexing (modifie les tokens en place).
+expand_token, /* Remplace la valeur d'un token '$VAR' par le contenu de la variable (env puis local). Libere l'ancienne valeur, strdup la nouvelle. */
+expand_tokens, /* Itère sur tous les tokens et effectue l'expansion des variables si necessaire (token commence par '$' et pas quote). */
+
+token_utils.c, // Utilitaires pour la manipulation de listes de tokens et debug.
+handle_empty_raw_token, /* Gere le cas ou collect_token retourne une chaine vide (pendant la boucle lexer). */
+append_token_to_list, /* Ajoute un token a la fin de la liste chainee (gestion head/tail pour O(1)). */
+qualify_token_quoting, /* Definit le flag 'quoted' d'un token en examinant si l'input original correspondant commencait/finissait par ' ou ". */
+print_tokens_debug, /* Fonction de debug pour afficher le contenu (type, valeur) de la liste de tokens. */
+
+utils.c, // Fonctions utilitaires de base (strcmp, strcpy, strtok, realloc, build_fullpath).
+ft_strcmp, /* Comparaison de chaines standard. */
+ft_strcpy, /* Copie de chaine standard. */
+ft_strtok, /* Implementation maison de strtok (avec static pour appels successifs). */
+ft_realloc, /* Implementation maison de realloc. */
+build_fullpath, /* Construit un chemin complet 'dir/file' (gere le cas dir == "."). Utilise pour globbing. */
+
+a_classer.c, // Fonctions diverses, potentiellement a reorganiser ou helper specifiques.
+execute_external_in_child, /* Logique enfant pour executer une commande externe (trouve path via find_excutable, env_to_array, execve). */
+is_redirection, /* Verifie si un type de token est une redirection quelconque (IN, OUT, APPEND, HEREDOC). */
+count_commands, /* Compte le nombre de commandes dans un pipeline (liste chainee via next_pipe). */
+init_command, /* Alloue et initialise une structure t_command vierge avec des NULL/0/false. */
+free_str_array_child, /* Libere un tableau de chaines (probablement specifique au nettoyage dans un processus enfant pour eviter double free). */
+
+global_vars.h, // Definition des variables globales (ex: g_exit_status pour signaux).
+// Pas de fonctions
+
+minishell.h, // Fichier header principal: includes, structures, enums, prototypes.
+// Pas de fonctions
+
+
+J'ai mis les commentaires comme tu l'as demandé. J'ai aussi noté quelques typos dans tes noms de fichiers (builting, nuiltin, excutable) et des possibles redondances ou noms de fichiers un peu flous, mais j'ai commenté le contenu tel quel.
+
+Vérifie si ça correspond bien à ce que tu voulais !

@@ -1,0 +1,142 @@
+/bin/echo hello
+/bin/pwd
+ls
+commande_inexistante
+/chemin/absolu/invalide
+/bin/ls fichier_inexistant
+/bin/echo hello world
+/bin/echo arg1 arg2 arg3
+echo
+echo hello world
+echo -n hello
+echo ""
+echo ''
+pwd
+mkdir testdir
+cd testdir
+pwd
+cd ..
+pwd
+rm -rf testdir
+cd /tmp
+pwd
+cd
+pwd
+cd non_existent_dir
+touch not_a_dir
+cd not_a_dir
+rm not_a_dir
+export VAR1=value1
+export VAR1=new_value VAR2=value2
+export VAR3=
+env | grep VAR
+export
+export 1VAR=fail
+unset VAR1
+unset VAR_DOES_NOT_EXIST
+unset 1VAR
+env | grep VAR
+env
+exit
+exit 42
+exit 256
+exit abc
+exit 123 abc
+export TEST_VAR="Hello World"
+echo $TEST_VAR
+echo "Value is: $TEST_VAR"
+echo 'Value is: $TEST_VAR'
+echo $NON_EXISTENT_VAR
+echo $?
+commande_inexistante
+echo $?
+export EMPTY_VAR=
+echo $EMPTY_VAR
+unset TEST_VAR EMPTY_VAR
+echo "Hello 'World'"
+echo 'Hello "World"'
+echo "This is a backslash: \\"
+echo 'This is a backslash: \\'
+echo "Special chars: \$ \\ \""
+echo 'Special chars: $ \'
+echo hello\"world
+echo hello\'world
+echo hello\ world
+echo "hello
+echo 'hello
+echo "Data for >" > outfile.txt
+cat outfile.txt
+echo "Overwrite >" > outfile.txt
+cat outfile.txt
+> emptyfile.txt
+ls -l emptyfile.txt
+mkdir existing_dir
+echo > existing_dir
+rmdir existing_dir
+echo "Data for >>" >> appendfile.txt
+cat appendfile.txt
+echo "Second line >>" >> appendfile.txt
+cat appendfile.txt
+echo "Data for <" > infile.txt
+cat < infile.txt
+wc -w < infile.txt
+cat < non_existent_file.txt
+mkdir existing_dir
+cat < existing_dir
+rmdir existing_dir
+chmod 000 infile.txt
+cat < infile.txt
+chmod 644 infile.txt
+cat << EOF
+line1
+line 2 with $USER
+EOF
+cat << "EOF"
+line1
+line 2 with $USER
+EOF
+cat << EOF
+EOF
+echo Hello > out.txt < infile.txt
+cat < infile.txt > outfile2.txt
+cat outfile2.txt
+cat < infile.txt >> appendfile.txt
+cat appendfile.txt
+commande_inexistante > out.txt
+ls -l out.txt
+cat < file_inexistant > out.txt
+rm infile.txt outfile.txt outfile2.txt appendfile.txt emptyfile.txt
+ls -l | wc -l
+echo "a b c d" | wc -w
+env | grep USER
+echo test | cat | wc -c
+commande_inexistante | wc -l
+echo test | commande_inexistante
+ls non_existent_file | wc -l
+/bin/true && echo Success
+/bin/false && echo Failed
+echo $?
+/bin/true || echo Failed
+echo $?
+/bin/false || echo Success
+echo $?
+cd /tmp && pwd
+cd non_existent || echo Failed
+ls && echo LS OK || echo LS Failed
+commande_inexistante && echo Failed || echo Error Handled
+echo A ; echo B
+/bin/false ; echo After False
+commande_inexistante ; echo After Inexistante
+; echo B
+echo A ;; echo B
+(echo In Subshell)
+(cd /tmp ; pwd)
+pwd
+(exit 55)
+echo $?
+(ls | wc -l)
+echo "Data for <" > infile.txt
+(cat < infile.txt > sub_out.txt)
+rm sub_out.txt
+rm infile.txt
+()

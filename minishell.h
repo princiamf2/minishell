@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/30 14:38:40 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/08 00:51:42 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -507,4 +507,14 @@ size_t					get_actual_length(char const *s, unsigned int start,
 							size_t len);
 void					set_minishell_signals(void);
 void					append_char_as_string(t_buffer *buffer, char c);
+bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data);
+bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data);
+bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data);
+bool	handle_backtick_substitution(t_token_state *state,
+	t_buffer *buf, t_data *data);
+char	*expand_param(const char *expr, t_data *data);
+long	eval_arith(const char *s);
+char	*run_command_substitution(const char *cmd, t_data *data);
+char	*expand_vars_in_str(const char *s, t_env *env);
+void exec_line(const char *cmd, t_data *data);
 #endif

@@ -1,6 +1,118 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
+/*   arith.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/07 20:38:18 by michel            #+#    #+#             */
+/*   Updated: 2025/05/07 22:06:41 by michel           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+static long	parse_term(const char **s);
+static long	parse_factor(const char **s);
+
+static long	parse_expr(const char **s)
+{
+	long	res;
+	long	rhs;
+	char	op;
+
+	res = parse_term(s);
+	while (**s == '+' || **s == '-')
+	{
+		op = *(*s)++;
+		rhs = parse_term(s);
+		if (op == '+')
+			res += rhs;
+		else
+			res -= rhs;
+	}
+	return (res);
+}
+
+static long	parse_factor(const char **s)
+{
+	long	res;
+
+	while (**s == ' ')
+		(*s)++;
+	if (**s == '(')
+	{
+		(*s)++;
+		res = parse_expr(s);
+		if (**s == ')')
+			(*s)++;
+	}
+	else
+		res = strtol(*s, (char **)s, 10);
+	return (res);
+}
+
+static long	parse_term(const char **s)
+{
+	long	res;
+	long	rhs;
+
+	res = parse_factor(s);
+	while (**s == '*' || **s == '/')
+	{
+		if (**s == '*')
+			res *= (rhs = parse_factor(&*s));
+		else
+			res /= (rhs = parse_factor(&*s));
+	}
+	return (res);
+}
+
+long	eval_arith(const char *s)
+{
+	const char	*ptr;
+
+	ptr = s;
+	return (parse_expr(&ptr));
+}
+
+char	*expand_vars_in_str(const char *s, t_env *env)
+{
+	int		 i;
+	char	*res;
+	char	*name;
+	char	*val;
+	char	*tmp;
+
+	i = 0;
+	res = strdup("");
+	while (s[i])
+	{
+		if (s[i] == '$' && (ft_isalpha(s[i + 1]) || s[i + 1] == '_'))
+		{
+			i++;
+			int start = i;
+			while (s[i] && (ft_isalnum(s[i]) || s[i] == '_'))
+				i++;
+			name = strndup(s + start, i - start);
+			val = env_get(env, name);
+			tmp = res;
+			res = ft_strjoin(res, val ? val : "");
+			free(tmp);
+			free(name);
+		}
+		else
+		{
+			tmp = res;
+			res = ft_strjoin(res, strndup(&s[i], 1));
+			free(tmp);
+			i++;
+		}
+	}
+	return (res);
+}/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
 /*   builtin_base.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
@@ -1310,6 +1422,34 @@ int	parent_process_wait(pid_t pid)
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
+/*   exec_line.c                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/07 21:59:24 by michel            #+#    #+#             */
+/*   Updated: 2025/05/07 22:00:03 by michel           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void exec_line(const char *cmd, t_data *data)
+{
+    t_token   *tokens;
+    t_cmdlist *cmdlist;
+
+    tokens = lexer(cmd, data->env, data);
+    if (!tokens)
+        return ;
+    cmdlist = parse_line(tokens);
+    free_tokens(tokens);
+    if (!cmdlist)
+        return ;
+    data->exit_status = execute_cmdlist(cmdlist, data);
+    free_cmdlist(cmdlist);
+}/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
 /*   exec_main.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
@@ -1789,6 +1929,146 @@ int	parent_process_subshell(pid_t pid)
 	{
 		return (1);
 	}
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   expander.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/07 19:52:07 by michel            #+#    #+#             */
+/*   Updated: 2025/05/07 23:26:39 by michel           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data)
+{
+	int		start;
+	int		depth;
+	char	*expr;
+	char	*result;
+
+	state->i += 2;
+	start = state->i;
+	depth = 1;
+	while (state->input[state->i] && depth)
+	{
+		if (state->input[state->i] == '{')
+			depth++;
+		else if (state->input[state->i] == '}')
+			depth--;
+		state->i++;
+	}
+	expr = strndup(state->input + start, state->i - start - 1);
+	result = expand_param(expr, data->env);
+	free(expr);
+	append_to_buffer(buf, result);
+	free(result);
+	return (true);
+}
+
+bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
+{
+	int		start;
+	int		depth;
+	char	*expr;
+	char	*tmp;
+	long	value;
+	char	*str_val;
+
+	start = state->i + 3;
+	depth = 1;
+	while (state->input[++state->i] && depth)
+	{
+		if (state->input[state->i] == '(') depth++;
+		else if (state->input[state->i] == ')') depth--;
+	}
+	expr = strndup(state->input + start, state->i - start);
+	tmp = expand_vars_in_str(expr, data->env);
+	free(expr);
+	value = eval_arith(tmp);
+	free(tmp);
+	str_val = ft_itoa(value);
+	append_to_buffer(buf, str_val);
+	free(str_val);
+	state->i += 2;
+	return (true);
+}
+
+bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data)
+{
+	int		start;
+	int		depth;
+	char	*cmd;
+	char	*out;
+
+	start = state->i + 2;
+	depth = 1;
+	while (state->input[++state->i] && depth)
+	{
+		if (state->input[state->i] == '(') depth++;
+		else if (state->input[state->i] == ')') depth--;
+	}
+	cmd = strndup(state->input + start, state->i - start);
+	out = run_command_substitution(cmd, data);
+	free(cmd);
+	append_to_buffer(buf, out);
+	free(out);
+	state->i++;
+	return (true);
+}
+
+bool	handle_backtick_substitution(t_token_state *state,
+		t_buffer *buf, t_data *data)
+{
+	int		start;
+	char	*cmd;
+	char	*out;
+
+	state->i++;
+	start = state->i;
+	while (state->input[state->i] && state->input[state->i] != '`')
+		state->i++;
+	cmd = strndup(state->input + start, state->i - start);
+	out = run_command_substitution(cmd, data);
+	free(cmd);
+	append_to_buffer(buf, out);
+	free(out);
+	state->i++;
+	return (true);
+}
+
+char	*run_command_substitution(const char *cmd, t_data *data)
+{
+	int	fd[2];
+	pid_t	pid;
+	char	*buf;
+	char	*out;
+	int	r;
+
+	pipe(fd);
+	pid = fork();
+	if (pid == 0)
+	{
+		close(fd[0]);
+		dup2(fd[1], STDOUT_FILENO);
+		exec_line(cmd, data);
+		exit(0);
+	}
+	close(fd[1]);
+	buf = malloc(4096);
+	r = read(fd[0], buf, 4095);
+	buf[r] = '\0';
+	waitpid(pid, NULL, 0);
+	close(fd[0]);
+	if (r > 0 && buf[r - 1] == '\n')
+		buf[r - 1] = '\0';
+	out = strdup(buf);
+	free(buf);
+	return (out);
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -2537,10 +2817,10 @@ char	*collect_token(t_token_state *state, t_data *data)
 /*                                                        :::      ::::::::   */
 /*   lexer_expand_var.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 15:33:04 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 16:23:32 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/07 23:04:16 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2550,15 +2830,30 @@ void	handle_dollar_sign(t_token_state *state, int exit_status_UNUSED,
 		t_data *data)
 {
 	(void)exit_status_UNUSED;
-	if (state->input[state->i] == '$' && !state->in_single)
+	if (state->input[state->i] != '$' || state->in_single)
+		return ;
+	if (state->input[state->i + 1] == '?')
 	{
-		if (state->input[state->i + 1] == '?')
-			handle_dollar_question(state->input, &state->i, state->buffer,
-				data);
-		else
-			handle_dollar_variable(state->input, &state->i, state->buffer,
-				data);
+		handle_dollar_question(state->input, &state->i, state->buffer, data);
+		return ;
 	}
+	if (state->input[state->i + 1] == '{')
+	{
+		handle_param_expansion(state, state->buffer, data);
+		return ;
+	}
+	if (state->input[state->i + 1] == '('
+		&& state->input[state->i + 2] == '(')
+	{
+	   handle_arith_expansion(state, state->buffer, data);
+	   return ;
+	}
+	if (state->input[state->i + 1] == '(')
+	{
+		handle_dollar_subst(state, state->buffer, data);
+		return ;
+	}
+	handle_dollar_variable(state->input, &state->i, state->buffer, data);
 }
 
 void	handle_dollar_question(const char *input, size_t *i, t_buffer *buf,
@@ -3041,6 +3336,76 @@ int	main(int argc, char **argv, char **envp)
 	exit_status = clean_minishell(data);
 	return (exit_status);
 }
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   param_expand.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/07 20:00:22 by michel            #+#    #+#             */
+/*   Updated: 2025/05/07 21:59:04 by michel           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+static char	*extract_varname(const char *expr)
+{
+	int	len;
+	char	*var;
+
+	len = 0;
+	while (expr[len] && expr[len] != ':' && expr[len] != '\0')
+		len++;
+	var = strndup(expr, len);
+	return (var);
+}
+
+static char	*extract_op(const char *expr)
+{
+	if (expr[0] == ':' && expr[1])
+		return (strndup(expr, 2));
+	return (strndup(expr, 1));
+}
+
+static char	*extract_word(const char *expr, const char *op)
+{
+	int	ofs;
+
+	ofs = strlen(op);
+	return (strdup(expr + ofs));
+}
+
+char	*expand_param(const char *expr, t_env *env)
+{
+	char	*var;
+	char	*op;
+	char	*word;
+	char	*val;
+	char	*res;
+
+	var = extract_varname(expr);
+	op = extract_op(expr + strlen(var));
+	word = extract_word(expr + strlen(var) + strlen(op), op);
+	val = env_get(env, var);
+	if ((!val || !*val) && strcmp(op, ":-") == 0)
+		res = strdup(word);
+	else if ((!val || !*val) && strcmp(op, ":=") == 0)
+	{
+		env_set(&env, var, word);
+		res = strdup(word);
+	}
+	else if (val && *val)
+		res = strdup(val);
+	else
+		res = strdup("");
+	free(var);
+	free(op);
+	free(word);
+	return (res);
+}
+
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
@@ -3944,10 +4309,10 @@ int	parse_command_arguments(t_command *cmd, t_token **cur)
 /*                                                        :::      ::::::::   */
 /*   process_line.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/27 16:18:27 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/30 13:49:40 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/04/30 17:00:08 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -4007,9 +4372,39 @@ void	parse_execute_and_cleanup(t_data *data)
 	data->cmdlist = NULL;
 }
 
+static bool	is_assignment(const char *s)
+{
+	char	*eq;
+	size_t	len;
+	char	*key;
+
+	eq = ft_strchr(s, '=');
+	if (!eq || eq == s)
+		return (false);
+	len = eq - s;
+	key = malloc(len + 1);
+	if (!key)
+		return (false);
+	ft_strncpy(key, s, len);
+	key[len] = '\0';
+	if (!is_valid_identifier(key))
+	{
+		free(key);
+		return (false);
+	}
+	free(key);
+	return (true);
+}
+
 bool	handle_special_input_cases(t_data *data)
 {
-	(void)data;
+	if (data->input && is_assignment(data->input))
+	{
+		process_local_assignmment(data->input, data);
+		free(data->input);
+		data->input = NULL;
+		return (true);
+	}
 	return (false);
 }
 /* ************************************************************************** */
@@ -4908,10 +5303,10 @@ extern volatile sig_atomic_t	g_exit_status;
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/30 14:38:40 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/07 21:43:08 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -5412,4 +5807,14 @@ size_t					get_actual_length(char const *s, unsigned int start,
 							size_t len);
 void					set_minishell_signals(void);
 void					append_char_as_string(t_buffer *buffer, char c);
+bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data);
+bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data);
+bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data);
+bool	handle_backtick_substitution(t_token_state *state,
+	t_buffer *buf, t_data *data);
+char	*expand_param(const char *expr, t_env *env);
+long	eval_arith(const char *s);
+char	*run_command_substitution(const char *cmd, t_data *data);
+char	*expand_vars_in_str(const char *s, t_env *env);
+void exec_line(const char *cmd, t_data *data);
 #endif

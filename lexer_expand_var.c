@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   lexer_expand_var.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 15:33:04 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 16:23:32 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/07 23:04:16 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,15 +16,30 @@ void	handle_dollar_sign(t_token_state *state, int exit_status_UNUSED,
 		t_data *data)
 {
 	(void)exit_status_UNUSED;
-	if (state->input[state->i] == '$' && !state->in_single)
+	if (state->input[state->i] != '$' || state->in_single)
+		return ;
+	if (state->input[state->i + 1] == '?')
 	{
-		if (state->input[state->i + 1] == '?')
-			handle_dollar_question(state->input, &state->i, state->buffer,
-				data);
-		else
-			handle_dollar_variable(state->input, &state->i, state->buffer,
-				data);
+		handle_dollar_question(state->input, &state->i, state->buffer, data);
+		return ;
 	}
+	if (state->input[state->i + 1] == '{')
+	{
+		handle_param_expansion(state, state->buffer, data);
+		return ;
+	}
+	if (state->input[state->i + 1] == '('
+		&& state->input[state->i + 2] == '(')
+	{
+	   handle_arith_expansion(state, state->buffer, data);
+	   return ;
+	}
+	if (state->input[state->i + 1] == '(')
+	{
+		handle_dollar_subst(state, state->buffer, data);
+		return ;
+	}
+	handle_dollar_variable(state->input, &state->i, state->buffer, data);
 }
 
 void	handle_dollar_question(const char *input, size_t *i, t_buffer *buf,

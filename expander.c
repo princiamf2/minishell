@@ -6,7 +6,7 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 19:52:07 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 00:58:45 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 01:25:30 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,19 +73,29 @@ bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data)
 	char	*cmd;
 	char	*out;
 
-	start = state->i + 2;
+	state->i += 2;
+	start = state->i;
 	depth = 1;
-	while (state->input[++state->i] && depth)
+	while (state->input[state->i] && depth)
 	{
 		if (state->input[state->i] == '(') depth++;
 		else if (state->input[state->i] == ')') depth--;
+		state->i++;
 	}
-	cmd = strndup(state->input + start, state->i - start);
+	if (depth != 0)
+	{
+		ft_putstr_fd("minishell: syntax error\n", 2);
+		return (false);
+	}
+	cmd = strndup(state->input + start, state->i - start - 1);
+	if (!cmd)
+		return (false);
 	out = run_command_substitution(cmd, data);
 	free(cmd);
+	if (!out)
+		return (false);
 	append_to_buffer(buf, out);
 	free(out);
-	state->i++;
 	return (true);
 }
 

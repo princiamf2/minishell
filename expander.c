@@ -6,7 +6,7 @@
 /*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 19:52:07 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 01:25:30 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 13:20:23 by michel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,14 +47,16 @@ bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
 	long	value;
 	char	*str_val;
 
-	start = state->i + 3;
-	depth = 1;
-	while (state->input[++state->i] && depth)
+	state->i += 3;
+	start = state->i;
+	depth = 2;
+	while (state->input[state->i] && depth)
 	{
 		if (state->input[state->i] == '(') depth++;
 		else if (state->input[state->i] == ')') depth--;
+		state->i++;
 	}
-	expr = strndup(state->input + start, state->i - start);
+	expr = strndup(state->input + start, state->i - start - 1);
 	tmp = expand_vars_in_str(expr, data->env);
 	free(expr);
 	value = eval_arith(tmp);
@@ -62,7 +64,6 @@ bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
 	str_val = ft_itoa(value);
 	append_to_buffer(buf, str_val);
 	free(str_val);
-	state->i += 2;
 	return (true);
 }
 

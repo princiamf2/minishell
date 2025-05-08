@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/08 00:51:42 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:10:43 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,6 +171,7 @@ typedef struct s_export_kv
 	char				*key;
 	char				*raw_value;
 	char				*eq;
+	bool				append;
 }						t_export_kv;
 
 char					*ft_strtok(char *s, const char *delim);
@@ -507,14 +508,21 @@ size_t					get_actual_length(char const *s, unsigned int start,
 							size_t len);
 void					set_minishell_signals(void);
 void					append_char_as_string(t_buffer *buffer, char c);
-bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data);
-bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data);
-bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data);
-bool	handle_backtick_substitution(t_token_state *state,
-	t_buffer *buf, t_data *data);
-char	*expand_param(const char *expr, t_data *data);
-long	eval_arith(const char *s);
-char	*run_command_substitution(const char *cmd, t_data *data);
-char	*expand_vars_in_str(const char *s, t_env *env);
-void exec_line(const char *cmd, t_data *data);
+bool					handle_param_expansion(t_token_state *state,
+							t_buffer *buf, t_data *data);
+bool					handle_arith_expansion(t_token_state *state,
+							t_buffer *buf, t_data *data);
+bool					handle_dollar_subst(t_token_state *state, t_buffer *buf,
+							t_data *data);
+bool					handle_backtick_substitution(t_token_state *state,
+							t_buffer *buf, t_data *data);
+char					*expand_param(const char *expr, t_data *data);
+long					eval_arith(const char *s);
+char					*run_command_substitution(const char *cmd,
+							t_data *data);
+char					*expand_vars_in_str(const char *s, t_env *env);
+void					exec_line(const char *cmd, t_data *data);
+void					do_export_no_assign(t_data *data, t_export_kv *kv);
+int						do_export_append(t_data *data, t_export_kv *kv);
+int						do_export_assign(t_data *data, t_export_kv *kv);
 #endif

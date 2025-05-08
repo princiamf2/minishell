@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_export_utils.c                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:04:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/30 13:31:28 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/08 18:42:42 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,17 @@
 
 bool	extract_export_kv(char *arg, t_export_kv *kv)
 {
+	char	*plus;
+
+	kv->append = false;
+	plus = ft_strnstr(arg, "+=", ft_strlen(arg));
+	if (plus)
+	{
+		kv->append = true;
+		kv->eq = plus;
+		kv->key = extract_key(arg, plus);
+		kv->raw_value = ft_strdup(plus + 2);
+	}
 	kv->eq = ft_strchr(arg, '=');
 	if (kv->eq)
 	{
@@ -22,6 +33,7 @@ bool	extract_export_kv(char *arg, t_export_kv *kv)
 	}
 	else
 	{
+		kv->eq = NULL;
 		kv->key = ft_strdup(arg);
 		kv->raw_value = NULL;
 	}
@@ -63,26 +75,15 @@ int	update_or_add_env_var(t_data *data, char *key, char *final_value)
 	return (0);
 }
 
-/* Orchestre la mise a jour de l'env pour export (interpretation valeur,
-	ajout/modif). */
 int	process_and_update_env(t_data *data, t_export_kv *kv)
 {
-	char	*final_value;
-
-	if (!kv->eq || !kv->raw_value)
+	if (!kv->eq && !kv->append)
 	{
+		do_export_no_assign(data, kv);
 		free(kv->key);
-		free(kv->raw_value);
 		return (0);
 	}
-	final_value = interpret_raw_value(kv->raw_value);
-	free(kv->raw_value);
-	kv->raw_value = NULL;
-	if (!final_value)
-	{
-		perror("minishell: interpret_raw_value failed for export value");
-		free(kv->key);
-		return (1);
-	}
-	return (update_or_add_env_var(data, kv->key, final_value));
+	if (kv->append)
+		return (do_export_append(data, kv));
+	return (do_export_assign(data, kv));
 }

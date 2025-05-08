@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   arith.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:38:18 by michel            #+#    #+#             */
-/*   Updated: 2025/05/07 22:06:41 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:46:41 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,11 +78,12 @@ long	eval_arith(const char *s)
 
 char	*expand_vars_in_str(const char *s, t_env *env)
 {
-	int		 i;
+	int		i;
 	char	*res;
 	char	*name;
 	char	*val;
 	char	*tmp;
+	int		start;
 
 	i = 0;
 	res = strdup("");
@@ -91,13 +92,16 @@ char	*expand_vars_in_str(const char *s, t_env *env)
 		if (s[i] == '$' && (ft_isalpha(s[i + 1]) || s[i + 1] == '_'))
 		{
 			i++;
-			int start = i;
+			start = i;
 			while (s[i] && (ft_isalnum(s[i]) || s[i] == '_'))
 				i++;
 			name = strndup(s + start, i - start);
 			val = env_get(env, name);
 			tmp = res;
-			res = ft_strjoin(res, val ? val : "");
+			if (val)
+				res = ft_strjoin(res, val);
+			else
+				res = ft_strjoin(res, "");
 			free(tmp);
 			free(name);
 		}

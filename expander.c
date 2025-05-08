@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   expander.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 19:52:07 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 13:20:23 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:35:37 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data)
+bool	handle_param_expansion(t_token_state *state, t_buffer *buf,
+		t_data *data)
 {
 	int		start;
 	int		depth;
@@ -38,7 +39,8 @@ bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data)
 	return (true);
 }
 
-bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
+bool	handle_arith_expansion(t_token_state *state, t_buffer *buf,
+		t_data *data)
 {
 	int		start;
 	int		depth;
@@ -52,8 +54,10 @@ bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
 	depth = 2;
 	while (state->input[state->i] && depth)
 	{
-		if (state->input[state->i] == '(') depth++;
-		else if (state->input[state->i] == ')') depth--;
+		if (state->input[state->i] == '(')
+			depth++;
+		else if (state->input[state->i] == ')')
+			depth--;
 		state->i++;
 	}
 	expr = strndup(state->input + start, state->i - start - 1);
@@ -79,8 +83,10 @@ bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data)
 	depth = 1;
 	while (state->input[state->i] && depth)
 	{
-		if (state->input[state->i] == '(') depth++;
-		else if (state->input[state->i] == ')') depth--;
+		if (state->input[state->i] == '(')
+			depth++;
+		else if (state->input[state->i] == ')')
+			depth--;
 		state->i++;
 	}
 	if (depth != 0)
@@ -100,8 +106,8 @@ bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data)
 	return (true);
 }
 
-bool	handle_backtick_substitution(t_token_state *state,
-		t_buffer *buf, t_data *data)
+bool	handle_backtick_substitution(t_token_state *state, t_buffer *buf,
+		t_data *data)
 {
 	int		start;
 	char	*cmd;
@@ -122,11 +128,11 @@ bool	handle_backtick_substitution(t_token_state *state,
 
 char	*run_command_substitution(const char *cmd, t_data *data)
 {
-	int	fd[2];
+	int		fd[2];
 	pid_t	pid;
 	char	*buf;
 	char	*out;
-	int	r;
+	int		r;
 
 	pipe(fd);
 	pid = fork();

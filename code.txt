@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   arith.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:38:18 by michel            #+#    #+#             */
-/*   Updated: 2025/05/07 22:06:41 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:46:41 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,11 +78,12 @@ long	eval_arith(const char *s)
 
 char	*expand_vars_in_str(const char *s, t_env *env)
 {
-	int		 i;
+	int		i;
 	char	*res;
 	char	*name;
 	char	*val;
 	char	*tmp;
+	int		start;
 
 	i = 0;
 	res = strdup("");
@@ -91,13 +92,16 @@ char	*expand_vars_in_str(const char *s, t_env *env)
 		if (s[i] == '$' && (ft_isalpha(s[i + 1]) || s[i + 1] == '_'))
 		{
 			i++;
-			int start = i;
+			start = i;
 			while (s[i] && (ft_isalnum(s[i]) || s[i] == '_'))
 				i++;
 			name = strndup(s + start, i - start);
 			val = env_get(env, name);
 			tmp = res;
-			res = ft_strjoin(res, val ? val : "");
+			if (val)
+				res = ft_strjoin(res, val);
+			else
+				res = ft_strjoin(res, "");
 			free(tmp);
 			free(name);
 		}
@@ -110,7 +114,8 @@ char	*expand_vars_in_str(const char *s, t_env *env)
 		}
 	}
 	return (res);
-}/* ************************************************************************** */
+}
+/* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   builtin_base.c                                     :+:      :+:    :+:   */
@@ -529,10 +534,10 @@ void	print_export_key_only(const char *env_var)
 /*                                                        :::      ::::::::   */
 /*   builtin_export_utils.c                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:04:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/30 13:31:28 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/08 18:42:42 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -540,6 +545,17 @@ void	print_export_key_only(const char *env_var)
 
 bool	extract_export_kv(char *arg, t_export_kv *kv)
 {
+	char	*plus;
+
+	kv->append = false;
+	plus = ft_strnstr(arg, "+=", ft_strlen(arg));
+	if (plus)
+	{
+		kv->append = true;
+		kv->eq = plus;
+		kv->key = extract_key(arg, plus);
+		kv->raw_value = ft_strdup(plus + 2);
+	}
 	kv->eq = ft_strchr(arg, '=');
 	if (kv->eq)
 	{
@@ -548,6 +564,7 @@ bool	extract_export_kv(char *arg, t_export_kv *kv)
 	}
 	else
 	{
+		kv->eq = NULL;
 		kv->key = ft_strdup(arg);
 		kv->raw_value = NULL;
 	}
@@ -589,28 +606,17 @@ int	update_or_add_env_var(t_data *data, char *key, char *final_value)
 	return (0);
 }
 
-/* Orchestre la mise a jour de l'env pour export (interpretation valeur,
-	ajout/modif). */
 int	process_and_update_env(t_data *data, t_export_kv *kv)
 {
-	char	*final_value;
-
-	if (!kv->eq || !kv->raw_value)
+	if (!kv->eq && !kv->append)
 	{
+		do_export_no_assign(data, kv);
 		free(kv->key);
-		free(kv->raw_value);
 		return (0);
 	}
-	final_value = interpret_raw_value(kv->raw_value);
-	free(kv->raw_value);
-	kv->raw_value = NULL;
-	if (!final_value)
-	{
-		perror("minishell: interpret_raw_value failed for export value");
-		free(kv->key);
-		return (1);
-	}
-	return (update_or_add_env_var(data, kv->key, final_value));
+	if (kv->append)
+		return (do_export_append(data, kv));
+	return (do_export_assign(data, kv));
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -762,6 +768,61 @@ void	free_env_array(char **env_array)
 		i++;
 	}
 	free(env_array);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   bultin_export_utils1.c                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/08 18:07:35 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/05/08 18:48:29 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+void	do_export_no_assign(t_data *data, t_export_kv *kv)
+{
+	char	*current;
+
+	current = env_get(data->local_vars, kv->key);
+	if (current)
+	{
+		env_set(&data->env, kv->key, current);
+		env_unset(&data->local_vars, kv->key);
+	}
+	else if (!env_get(data->env, kv->key))
+		env_set(&data->env, kv->key, "");
+}
+
+int	do_export_append(t_data *data, t_export_kv *kv)
+{
+	char	*current;
+	char	*suffix;
+	char	*to_set;
+
+	current = env_get(data->env, kv->key);
+	suffix = interpret_raw_value(kv->raw_value);
+	if (current)
+		to_set = ft_strjoin(current, suffix);
+	else
+		to_set = ft_strjoin("", suffix);
+	free(suffix);
+	free(kv->raw_value);
+	kv->raw_value = NULL;
+	return (update_or_add_env_var(data, kv->key, to_set));
+}
+
+int	do_export_assign(t_data *data, t_export_kv *kv)
+{
+	char	*to_set;
+
+	to_set = interpret_raw_value(kv->raw_value);
+	free(kv->raw_value);
+	kv->raw_value = NULL;
+	return (update_or_add_env_var(data, kv->key, to_set));
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -1424,30 +1485,31 @@ int	parent_process_wait(pid_t pid)
 /*                                                        :::      ::::::::   */
 /*   exec_line.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 21:59:24 by michel            #+#    #+#             */
-/*   Updated: 2025/05/07 22:00:03 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:49:03 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-void exec_line(const char *cmd, t_data *data)
+void	exec_line(const char *cmd, t_data *data)
 {
-    t_token   *tokens;
-    t_cmdlist *cmdlist;
+	t_token		*tokens;
+	t_cmdlist	*cmdlist;
 
-    tokens = lexer(cmd, data->env, data);
-    if (!tokens)
-        return ;
-    cmdlist = parse_line(tokens);
-    free_tokens(tokens);
-    if (!cmdlist)
-        return ;
-    data->exit_status = execute_cmdlist(cmdlist, data);
-    free_cmdlist(cmdlist);
-}/* ************************************************************************** */
+	tokens = lexer(cmd, data->env, data);
+	if (!tokens)
+		return ;
+	cmdlist = parse_line(tokens);
+	free_tokens(tokens);
+	if (!cmdlist)
+		return ;
+	data->exit_status = execute_cmdlist(cmdlist, data);
+	free_cmdlist(cmdlist);
+}
+/* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   exec_main.c                                        :+:      :+:    :+:   */
@@ -1935,16 +1997,17 @@ int	parent_process_subshell(pid_t pid)
 /*                                                        :::      ::::::::   */
 /*   expander.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 19:52:07 by michel            #+#    #+#             */
-/*   Updated: 2025/05/07 23:26:39 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:35:37 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data)
+bool	handle_param_expansion(t_token_state *state, t_buffer *buf,
+		t_data *data)
 {
 	int		start;
 	int		depth;
@@ -1963,14 +2026,15 @@ bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data)
 		state->i++;
 	}
 	expr = strndup(state->input + start, state->i - start - 1);
-	result = expand_param(expr, data->env);
+	result = expand_param(expr, data);
 	free(expr);
 	append_to_buffer(buf, result);
 	free(result);
 	return (true);
 }
 
-bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
+bool	handle_arith_expansion(t_token_state *state, t_buffer *buf,
+		t_data *data)
 {
 	int		start;
 	int		depth;
@@ -1979,14 +2043,18 @@ bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
 	long	value;
 	char	*str_val;
 
-	start = state->i + 3;
-	depth = 1;
-	while (state->input[++state->i] && depth)
+	state->i += 3;
+	start = state->i;
+	depth = 2;
+	while (state->input[state->i] && depth)
 	{
-		if (state->input[state->i] == '(') depth++;
-		else if (state->input[state->i] == ')') depth--;
+		if (state->input[state->i] == '(')
+			depth++;
+		else if (state->input[state->i] == ')')
+			depth--;
+		state->i++;
 	}
-	expr = strndup(state->input + start, state->i - start);
+	expr = strndup(state->input + start, state->i - start - 1);
 	tmp = expand_vars_in_str(expr, data->env);
 	free(expr);
 	value = eval_arith(tmp);
@@ -1994,7 +2062,6 @@ bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data)
 	str_val = ft_itoa(value);
 	append_to_buffer(buf, str_val);
 	free(str_val);
-	state->i += 2;
 	return (true);
 }
 
@@ -2005,24 +2072,36 @@ bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data)
 	char	*cmd;
 	char	*out;
 
-	start = state->i + 2;
+	state->i += 2;
+	start = state->i;
 	depth = 1;
-	while (state->input[++state->i] && depth)
+	while (state->input[state->i] && depth)
 	{
-		if (state->input[state->i] == '(') depth++;
-		else if (state->input[state->i] == ')') depth--;
+		if (state->input[state->i] == '(')
+			depth++;
+		else if (state->input[state->i] == ')')
+			depth--;
+		state->i++;
 	}
-	cmd = strndup(state->input + start, state->i - start);
+	if (depth != 0)
+	{
+		ft_putstr_fd("minishell: syntax error\n", 2);
+		return (false);
+	}
+	cmd = strndup(state->input + start, state->i - start - 1);
+	if (!cmd)
+		return (false);
 	out = run_command_substitution(cmd, data);
 	free(cmd);
+	if (!out)
+		return (false);
 	append_to_buffer(buf, out);
 	free(out);
-	state->i++;
 	return (true);
 }
 
-bool	handle_backtick_substitution(t_token_state *state,
-		t_buffer *buf, t_data *data)
+bool	handle_backtick_substitution(t_token_state *state, t_buffer *buf,
+		t_data *data)
 {
 	int		start;
 	char	*cmd;
@@ -2043,11 +2122,11 @@ bool	handle_backtick_substitution(t_token_state *state,
 
 char	*run_command_substitution(const char *cmd, t_data *data)
 {
-	int	fd[2];
+	int		fd[2];
 	pid_t	pid;
 	char	*buf;
 	char	*out;
-	int	r;
+	int		r;
 
 	pipe(fd);
 	pid = fork();
@@ -2817,10 +2896,10 @@ char	*collect_token(t_token_state *state, t_data *data)
 /*                                                        :::      ::::::::   */
 /*   lexer_expand_var.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 15:33:04 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/05/07 23:04:16 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:39:17 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2842,11 +2921,10 @@ void	handle_dollar_sign(t_token_state *state, int exit_status_UNUSED,
 		handle_param_expansion(state, state->buffer, data);
 		return ;
 	}
-	if (state->input[state->i + 1] == '('
-		&& state->input[state->i + 2] == '(')
+	if (state->input[state->i + 1] == '(' && state->input[state->i + 2] == '(')
 	{
-	   handle_arith_expansion(state, state->buffer, data);
-	   return ;
+		handle_arith_expansion(state, state->buffer, data);
+		return ;
 	}
 	if (state->input[state->i + 1] == '(')
 	{
@@ -2911,9 +2989,8 @@ size_t	extract_variable_name(const char *input, size_t start, char *var_buffer,
 	size_t	len;
 
 	len = 0;
-	while (input[start + len]
-		&& (ft_isalnum(input[start + len])
-			|| input[start + len] == '_'))
+	while (input[start + len] && (ft_isalnum(input[start + len]) || input[start
+				+ len] == '_'))
 	{
 		len++;
 	}
@@ -3341,10 +3418,10 @@ int	main(int argc, char **argv, char **envp)
 /*                                                        :::      ::::::::   */
 /*   param_expand.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:00:22 by michel            #+#    #+#             */
-/*   Updated: 2025/05/07 21:59:04 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:34:12 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -3352,7 +3429,7 @@ int	main(int argc, char **argv, char **envp)
 
 static char	*extract_varname(const char *expr)
 {
-	int	len;
+	int		len;
 	char	*var;
 
 	len = 0;
@@ -3377,7 +3454,7 @@ static char	*extract_word(const char *expr, const char *op)
 	return (strdup(expr + ofs));
 }
 
-char	*expand_param(const char *expr, t_env *env)
+char	*expand_param(const char *expr, t_data *data)
 {
 	char	*var;
 	char	*op;
@@ -3388,12 +3465,14 @@ char	*expand_param(const char *expr, t_env *env)
 	var = extract_varname(expr);
 	op = extract_op(expr + strlen(var));
 	word = extract_word(expr + strlen(var) + strlen(op), op);
-	val = env_get(env, var);
+	val = env_get(data->local_vars, var);
+	if (!val)
+		val = env_get(data->env, var);
 	if ((!val || !*val) && strcmp(op, ":-") == 0)
 		res = strdup(word);
 	else if ((!val || !*val) && strcmp(op, ":=") == 0)
 	{
-		env_set(&env, var, word);
+		env_set(&data->env, var, word);
 		res = strdup(word);
 	}
 	else if (val && *val)
@@ -3405,7 +3484,6 @@ char	*expand_param(const char *expr, t_env *env)
 	free(word);
 	return (res);
 }
-
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
@@ -5303,10 +5381,10 @@ extern volatile sig_atomic_t	g_exit_status;
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/07 21:43:08 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:10:43 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -5471,6 +5549,7 @@ typedef struct s_export_kv
 	char				*key;
 	char				*raw_value;
 	char				*eq;
+	bool				append;
 }						t_export_kv;
 
 char					*ft_strtok(char *s, const char *delim);
@@ -5807,14 +5886,21 @@ size_t					get_actual_length(char const *s, unsigned int start,
 							size_t len);
 void					set_minishell_signals(void);
 void					append_char_as_string(t_buffer *buffer, char c);
-bool	handle_param_expansion(t_token_state *state, t_buffer *buf, t_data *data);
-bool	handle_arith_expansion(t_token_state *state, t_buffer *buf, t_data *data);
-bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data);
-bool	handle_backtick_substitution(t_token_state *state,
-	t_buffer *buf, t_data *data);
-char	*expand_param(const char *expr, t_env *env);
-long	eval_arith(const char *s);
-char	*run_command_substitution(const char *cmd, t_data *data);
-char	*expand_vars_in_str(const char *s, t_env *env);
-void exec_line(const char *cmd, t_data *data);
+bool					handle_param_expansion(t_token_state *state,
+							t_buffer *buf, t_data *data);
+bool					handle_arith_expansion(t_token_state *state,
+							t_buffer *buf, t_data *data);
+bool					handle_dollar_subst(t_token_state *state, t_buffer *buf,
+							t_data *data);
+bool					handle_backtick_substitution(t_token_state *state,
+							t_buffer *buf, t_data *data);
+char					*expand_param(const char *expr, t_data *data);
+long					eval_arith(const char *s);
+char					*run_command_substitution(const char *cmd,
+							t_data *data);
+char					*expand_vars_in_str(const char *s, t_env *env);
+void					exec_line(const char *cmd, t_data *data);
+void					do_export_no_assign(t_data *data, t_export_kv *kv);
+int						do_export_append(t_data *data, t_export_kv *kv);
+int						do_export_assign(t_data *data, t_export_kv *kv);
 #endif

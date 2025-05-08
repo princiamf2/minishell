@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   lexer_expand_var.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 15:33:04 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/05/07 23:04:16 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:39:17 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,11 +28,10 @@ void	handle_dollar_sign(t_token_state *state, int exit_status_UNUSED,
 		handle_param_expansion(state, state->buffer, data);
 		return ;
 	}
-	if (state->input[state->i + 1] == '('
-		&& state->input[state->i + 2] == '(')
+	if (state->input[state->i + 1] == '(' && state->input[state->i + 2] == '(')
 	{
-	   handle_arith_expansion(state, state->buffer, data);
-	   return ;
+		handle_arith_expansion(state, state->buffer, data);
+		return ;
 	}
 	if (state->input[state->i + 1] == '(')
 	{
@@ -97,9 +96,8 @@ size_t	extract_variable_name(const char *input, size_t start, char *var_buffer,
 	size_t	len;
 
 	len = 0;
-	while (input[start + len]
-		&& (ft_isalnum(input[start + len])
-			|| input[start + len] == '_'))
+	while (input[start + len] && (ft_isalnum(input[start + len]) || input[start
+				+ len] == '_'))
 	{
 		len++;
 	}

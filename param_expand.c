@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   param_expand.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: michel <michel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:00:22 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 00:50:02 by michel           ###   ########.fr       */
+/*   Updated: 2025/05/08 18:34:12 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 static char	*extract_varname(const char *expr)
 {
-	int	len;
+	int		len;
 	char	*var;
 
 	len = 0;
@@ -52,7 +52,7 @@ char	*expand_param(const char *expr, t_data *data)
 	word = extract_word(expr + strlen(var) + strlen(op), op);
 	val = env_get(data->local_vars, var);
 	if (!val)
-    	val = env_get(data->env, var);
+		val = env_get(data->env, var);
 	if ((!val || !*val) && strcmp(op, ":-") == 0)
 		res = strdup(word);
 	else if ((!val || !*val) && strcmp(op, ":=") == 0)
@@ -69,4 +69,3 @@ char	*expand_param(const char *expr, t_data *data)
 	free(word);
 	return (res);
 }
-

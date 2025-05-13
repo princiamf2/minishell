@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:38:18 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 18:46:41 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 17:48:59 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,9 +61,15 @@ static long	parse_term(const char **s)
 	while (**s == '*' || **s == '/')
 	{
 		if (**s == '*')
-			res *= (rhs = parse_factor(&*s));
+		{
+			rhs = parse_factor(&*s);
+			res *= rhs;
+		}
 		else
-			res /= (rhs = parse_factor(&*s));
+		{
+			rhs = parse_factor(&*s);
+			res /= rhs;
+		}
 	}
 	return (res);
 }
@@ -78,38 +84,18 @@ long	eval_arith(const char *s)
 
 char	*expand_vars_in_str(const char *s, t_env *env)
 {
-	int		i;
 	char	*res;
-	char	*name;
-	char	*val;
-	char	*tmp;
-	int		start;
+	int		i;
 
-	i = 0;
 	res = strdup("");
+	i = 0;
 	while (s[i])
 	{
 		if (s[i] == '$' && (ft_isalpha(s[i + 1]) || s[i + 1] == '_'))
-		{
-			i++;
-			start = i;
-			while (s[i] && (ft_isalnum(s[i]) || s[i] == '_'))
-				i++;
-			name = strndup(s + start, i - start);
-			val = env_get(env, name);
-			tmp = res;
-			if (val)
-				res = ft_strjoin(res, val);
-			else
-				res = ft_strjoin(res, "");
-			free(tmp);
-			free(name);
-		}
+			res = append_var(res, s, env, &i);
 		else
 		{
-			tmp = res;
-			res = ft_strjoin(res, strndup(&s[i], 1));
-			free(tmp);
+			res = append_char(res, s[i]);
 			i++;
 		}
 	}

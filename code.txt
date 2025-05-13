@@ -990,6 +990,74 @@ void	free_str_array(char **array)
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
+/*   complete_line.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 14:48:45 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/05/13 16:20:18 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+static void	update_flags(const char *s, int *in_single, int *in_double)
+{
+	size_t	i;
+
+	i = 0;
+	while (s[i])
+	{
+		if (s[i] == '\'' && !*in_double)
+			*in_single ^= 1;
+		else if (s[i] == '\"' && !*in_single)
+			*in_double ^= 1;
+		i++;
+	}
+}
+
+static char	*append_next_line(char *line, char *more)
+{
+	char	*tmp;
+	char	*new_line;
+
+	tmp = ft_strjoin(line, "\n");
+	free(line);
+	new_line = ft_strjoin(tmp, more);
+	free(tmp);
+	free(more);
+	return (new_line);
+}
+
+char	*read_complete_line(void)
+{
+	char	*line;
+	char	*more;
+	int		in_single;
+	int		in_double;
+
+	*((char **)&rl_basic_quote_characters) = "";
+	in_single = 0;
+	in_double = 0;
+	line = readline("minishell$> ");
+	if (!line)
+		return (NULL);
+	update_flags(line, &in_single, &in_double);
+	while (in_single || in_double)
+	{
+		more = readline("dquotes> ");
+		if (!more)
+			break ;
+		line = append_next_line(line, more);
+		in_single = 0;
+		in_double = 0;
+		update_flags(line, &in_single, &in_double);
+	}
+	return (line);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
 /*   env_add_remove.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
@@ -3323,10 +3391,10 @@ void	local_set(t_env **local, const char *key, const char *val)
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/29 14:52:31 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/13 16:25:12 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -3369,7 +3437,7 @@ void	process_input(t_data *data)
 
 	while (1)
 	{
-		line = readline("minishell$> ");
+		line = read_complete_line();
 		if (line == NULL && g_exit_status == 130)
 		{
 			g_exit_status = 0;
@@ -5384,7 +5452,7 @@ extern volatile sig_atomic_t	g_exit_status;
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/08 18:10:43 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 15:31:00 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -5903,4 +5971,6 @@ void					exec_line(const char *cmd, t_data *data);
 void					do_export_no_assign(t_data *data, t_export_kv *kv);
 int						do_export_append(t_data *data, t_export_kv *kv);
 int						do_export_assign(t_data *data, t_export_kv *kv);
+char					*read_complete_line(void);
+
 #endif

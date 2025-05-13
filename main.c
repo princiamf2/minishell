@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/29 14:52:31 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/13 16:25:12 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ void	process_input(t_data *data)
 
 	while (1)
 	{
-		line = readline("minishell$> ");
+		line = read_complete_line();
 		if (line == NULL && g_exit_status == 130)
 		{
 			g_exit_status = 0;

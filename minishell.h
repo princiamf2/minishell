@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/08 18:10:43 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 15:31:00 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -525,4 +525,6 @@ void					exec_line(const char *cmd, t_data *data);
 void					do_export_no_assign(t_data *data, t_export_kv *kv);
 int						do_export_append(t_data *data, t_export_kv *kv);
 int						do_export_assign(t_data *data, t_export_kv *kv);
+char					*read_complete_line(void);
+
 #endif

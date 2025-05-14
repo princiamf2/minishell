@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   redirections.c                                     :+:      :+:    :+:   */
+/*   redirection.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
-/*   Updated: 2025/04/26 17:33:22 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 20:05:18 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,26 +80,24 @@ int	handle_output_append_redirection(t_command *cmd)
 
 int	handle_heredoc(t_command *cmd)
 {
-	int		fd;
-	char	*tmp_name;
-	int		ret;
+	int	fd;
 
-	fd = open_tmp_heredoc_file(&tmp_name);
+	fd = open(cmd->heredoc_tmp, O_RDONLY);
 	if (fd < 0)
 	{
 		perror("open heredoc");
 		return (-1);
 	}
-	ret = read_and_write_heredoc(fd, cmd->input);
-	if (ret < 0)
+	if (dup2(fd, STDIN_FILENO) < 0)
 	{
+		perror("dup2 heredoc");
 		close(fd);
-		unlink(tmp_name);
-		free(tmp_name);
 		return (-1);
 	}
-	ret = finalize_heredoc(fd, tmp_name);
-	return (ret);
+	close(fd);
+	unlink(cmd->heredoc_tmp);
+	free(cmd->heredoc_tmp);
+	return (0);
 }
 
 int	handle_redirection(t_command *cmd)

@@ -12,7 +12,8 @@ SRCS =  builtin_unset.c env_add_remove.c exec_pipe_utils.c exec_extern.c \
 		heredoc_memo.c builtin_base.c builtin_export.c builtin_export_utils.c \
 		builtin_export_arg.c builtin_dispatch.c builtin_exit.c builtin_utils.c env_init.c \
 		env_update.c globbing.c globbing_matches.c param_expand.c expander.c arith.c \
-		exec_line.c bultin_export_utils1.c complete_line.c expader_utils.c
+		exec_line.c bultin_export_utils1.c complete_line.c expander_utils.c expander_utils2.c \
+		utils2.c
 
 
 CC = gcc
@@ -38,5 +39,8 @@ fclean: clean
 	$(MAKE) -C $(LIBFT_DIR) fclean
 
 re: fclean all
+
+debug: $(NAME)
+	@valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes --track-origins=yes --suppressions=ignore_readline_leaks.supp --log-file="leaks.log" ./minishell
 
 .PHONY: all clean fclean re

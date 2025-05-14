@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:38:18 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 18:46:41 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 17:48:59 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,9 +61,15 @@ static long	parse_term(const char **s)
 	while (**s == '*' || **s == '/')
 	{
 		if (**s == '*')
-			res *= (rhs = parse_factor(&*s));
+		{
+			rhs = parse_factor(&*s);
+			res *= rhs;
+		}
 		else
-			res /= (rhs = parse_factor(&*s));
+		{
+			rhs = parse_factor(&*s);
+			res /= rhs;
+		}
 	}
 	return (res);
 }
@@ -78,38 +84,18 @@ long	eval_arith(const char *s)
 
 char	*expand_vars_in_str(const char *s, t_env *env)
 {
-	int		i;
 	char	*res;
-	char	*name;
-	char	*val;
-	char	*tmp;
-	int		start;
+	int		i;
 
-	i = 0;
 	res = strdup("");
+	i = 0;
 	while (s[i])
 	{
 		if (s[i] == '$' && (ft_isalpha(s[i + 1]) || s[i + 1] == '_'))
-		{
-			i++;
-			start = i;
-			while (s[i] && (ft_isalnum(s[i]) || s[i] == '_'))
-				i++;
-			name = strndup(s + start, i - start);
-			val = env_get(env, name);
-			tmp = res;
-			if (val)
-				res = ft_strjoin(res, val);
-			else
-				res = ft_strjoin(res, "");
-			free(tmp);
-			free(name);
-		}
+			res = append_var(res, s, env, &i);
 		else
 		{
-			tmp = res;
-			res = ft_strjoin(res, strndup(&s[i], 1));
-			free(tmp);
+			res = append_char(res, s[i]);
 			i++;
 		}
 	}
@@ -537,7 +523,7 @@ void	print_export_key_only(const char *env_var)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:04:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/08 18:42:42 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 18:02:45 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -545,30 +531,9 @@ void	print_export_key_only(const char *env_var)
 
 bool	extract_export_kv(char *arg, t_export_kv *kv)
 {
-	char	*plus;
-
-	kv->append = false;
-	plus = ft_strnstr(arg, "+=", ft_strlen(arg));
-	if (plus)
-	{
-		kv->append = true;
-		kv->eq = plus;
-		kv->key = extract_key(arg, plus);
-		kv->raw_value = ft_strdup(plus + 2);
-	}
-	kv->eq = ft_strchr(arg, '=');
-	if (kv->eq)
-	{
-		kv->key = extract_key(arg, kv->eq);
-		kv->raw_value = extract_value(kv->eq);
-	}
-	else
-	{
-		kv->eq = NULL;
-		kv->key = ft_strdup(arg);
-		kv->raw_value = NULL;
-	}
-	if (!kv->key)
+	handle_append_flag(arg, kv);
+	handle_equal_sign(arg, kv);
+	if (kv->key == NULL)
 	{
 		perror("minishell: strdup/substr failed for export key");
 		free(kv->raw_value);
@@ -1582,10 +1547,10 @@ void	exec_line(const char *cmd, t_data *data)
 /*                                                        :::      ::::::::   */
 /*   exec_main.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/04/30 13:37:59 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 18:40:42 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1598,6 +1563,8 @@ int	execute_cmdlist(t_cmdlist *commands, t_data *data)
 
 	last_status = data->exit_status;
 	node = commands;
+	if (prepare_all_heredocs(commands) < 0)
+		return (1);
 	while (node)
 	{
 		if (!node->andor)
@@ -1750,10 +1717,10 @@ char	*search_executable_in_paths(char *paths, const char *cmd)
 /*                                                        :::      ::::::::   */
 /*   exec_pipe.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:09:04 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/30 13:41:17 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 19:44:00 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1836,10 +1803,16 @@ int	*create_pipes(int n)
 
 int	execute_child(t_command *cmd, int index, t_pipe_info *pi, t_data *data)
 {
-	setup_pipes_for_child(index, pi);
+	if (cmd->heredoc)
+	{
+		if (handle_redirection(cmd) < 0)
+			exit(1);
+	}
+	else
+	{
+		setup_pipes_for_child(index, pi);
+	}
 	close_unused_pipes(pi);
-	if (handle_redirection(cmd) < 0)
-		exit(1);
 	execute_builtin_or_command(cmd, data);
 	return (0);
 }
@@ -2068,7 +2041,7 @@ int	parent_process_subshell(pid_t pid)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 19:52:07 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 18:35:37 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 18:12:18 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2101,64 +2074,36 @@ bool	handle_param_expansion(t_token_state *state, t_buffer *buf,
 	return (true);
 }
 
-bool	handle_arith_expansion(t_token_state *state, t_buffer *buf,
-		t_data *data)
+bool	handle_arith_expansion(t_token_state *st, t_buffer *buf, t_data *data)
 {
-	int		start;
-	int		depth;
 	char	*expr;
-	char	*tmp;
+	char	*expanded;
 	long	value;
 	char	*str_val;
 
-	state->i += 3;
-	start = state->i;
-	depth = 2;
-	while (state->input[state->i] && depth)
-	{
-		if (state->input[state->i] == '(')
-			depth++;
-		else if (state->input[state->i] == ')')
-			depth--;
-		state->i++;
-	}
-	expr = strndup(state->input + start, state->i - start - 1);
-	tmp = expand_vars_in_str(expr, data->env);
+	expr = extract_arith_expr(st);
+	expanded = expand_vars_in_str(expr, data->env);
 	free(expr);
-	value = eval_arith(tmp);
-	free(tmp);
+	value = eval_arith(expanded);
+	free(expanded);
 	str_val = ft_itoa(value);
 	append_to_buffer(buf, str_val);
 	free(str_val);
 	return (true);
 }
 
-bool	handle_dollar_subst(t_token_state *state, t_buffer *buf, t_data *data)
+bool	handle_dollar_subst(t_token_state *st, t_buffer *buf, t_data *data)
 {
-	int		start;
-	int		depth;
 	char	*cmd;
 	char	*out;
 
-	state->i += 2;
-	start = state->i;
-	depth = 1;
-	while (state->input[state->i] && depth)
-	{
-		if (state->input[state->i] == '(')
-			depth++;
-		else if (state->input[state->i] == ')')
-			depth--;
-		state->i++;
-	}
-	if (depth != 0)
+	cmd = extract_subst_cmd(st);
+	if (!cmd || st->input[st->i - 1] != ')')
 	{
 		ft_putstr_fd("minishell: syntax error\n", 2);
+		free(cmd);
 		return (false);
 	}
-	cmd = strndup(state->input + start, state->i - start - 1);
-	if (!cmd)
-		return (false);
 	out = run_command_substitution(cmd, data);
 	free(cmd);
 	if (!out)
@@ -2190,10 +2135,70 @@ bool	handle_backtick_substitution(t_token_state *state, t_buffer *buf,
 
 char	*run_command_substitution(const char *cmd, t_data *data)
 {
+	char	*buf;
+	char	*out;
+
+	buf = read_subst_output(cmd, data);
+	out = strdup(buf);
+	free(buf);
+	return (out);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   expander_utils2.c                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 18:07:36 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/05/13 18:15:03 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*extract_arith_expr(t_token_state *st)
+{
+	int	start;
+	int	depth;
+
+	start = st->i + 3;
+	depth = 2;
+	while (st->input[st->i] && depth)
+	{
+		if (st->input[st->i] == '(')
+			depth++;
+		else if (st->input[st->i] == ')')
+			depth--;
+		st->i++;
+	}
+	return (strndup(st->input + start, st->i - start - 1));
+}
+
+char	*extract_subst_cmd(t_token_state *st)
+{
+	int	start;
+	int	depth;
+
+	st->i += 2;
+	start = st->i;
+	depth = 1;
+	while (st->input[st->i] && depth)
+	{
+		if (st->input[st->i] == '(')
+			depth++;
+		else if (st->input[st->i] == ')')
+			depth--;
+		st->i++;
+	}
+	return (strndup(st->input + start, st->i - start - 1));
+}
+
+char	*read_subst_output(const char *cmd, t_data *data)
+{
 	int		fd[2];
 	pid_t	pid;
 	char	*buf;
-	char	*out;
 	int		r;
 
 	pipe(fd);
@@ -2203,7 +2208,7 @@ char	*run_command_substitution(const char *cmd, t_data *data)
 		close(fd[0]);
 		dup2(fd[1], STDOUT_FILENO);
 		exec_line(cmd, data);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	close(fd[1]);
 	buf = malloc(4096);
@@ -2213,9 +2218,116 @@ char	*run_command_substitution(const char *cmd, t_data *data)
 	close(fd[0]);
 	if (r > 0 && buf[r - 1] == '\n')
 		buf[r - 1] = '\0';
-	out = strdup(buf);
-	free(buf);
-	return (out);
+	return (buf);
+}
+
+char	*get_env_value(const char *var, t_data *data)
+{
+	char	*val;
+
+	val = env_get(data->local_vars, var);
+	if (!val)
+		val = env_get(data->env, var);
+	return (val);
+}
+
+char	*apply_param_op(const char *var, const char *op, const char *word,
+		t_data *data)
+{
+	char	*val;
+	char	*res;
+
+	val = get_env_value(var, data);
+	if ((!val || !*val) && strcmp(op, ":-") == 0)
+		res = strdup(word);
+	else if ((!val || !*val) && strcmp(op, ":=") == 0)
+	{
+		env_set(&data->env, var, word);
+		res = strdup(word);
+	}
+	else if (val && *val)
+		res = strdup(val);
+	else
+		res = strdup("");
+	return (res);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   expander_utils.c                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 18:06:46 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/05/13 18:06:48 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*append_char(char *res, char c)
+{
+	char	*tmp;
+
+	tmp = ft_strjoin(res, strndup(&c, 1));
+	free(res);
+	return (tmp);
+}
+
+char	*append_var(char *res, const char *s, t_env *env, int *i)
+{
+	int		start;
+	char	*name;
+	char	*val;
+	char	*to_join;
+	char	*tmp;
+
+	(*i)++;
+	start = *i;
+	while (s[*i] && (ft_isalnum(s[*i]) || s[*i] == '_'))
+		(*i)++;
+	name = strndup(s + start, *i - start);
+	val = env_get(env, name);
+	if (val)
+		to_join = val;
+	else
+		to_join = "";
+	tmp = ft_strjoin(res, to_join);
+	free(res);
+	free(name);
+	return (tmp);
+}
+
+void	handle_append_flag(char *arg, t_export_kv *kv)
+{
+	char	*plus;
+
+	kv->append = false;
+	plus = ft_strnstr(arg, "+=", ft_strlen(arg));
+	if (plus)
+	{
+		kv->append = true;
+		kv->eq = plus;
+		kv->key = extract_key(arg, plus);
+		kv->raw_value = ft_strdup(plus + 2);
+	}
+}
+
+void	handle_equal_sign(char *arg, t_export_kv *kv)
+{
+	if (kv->eq == NULL)
+		kv->eq = ft_strchr(arg, '=');
+	if (kv->eq)
+	{
+		kv->key = extract_key(arg, kv->eq);
+		kv->raw_value = extract_value(kv->eq);
+	}
+	else
+	{
+		kv->eq = NULL;
+		kv->key = ft_strdup(arg);
+		kv->raw_value = NULL;
+	}
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -2486,10 +2598,10 @@ int	process_directory_entries(t_globinfo *info, const char *dirpath,
 /*                                                        :::      ::::::::   */
 /*   heredoc_file.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 02:03:50 by michel            #+#    #+#             */
-/*   Updated: 2025/04/30 14:00:23 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 20:01:39 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2570,30 +2682,6 @@ int	read_and_write_heredoc(int fd, const char *raw_delimiter)
 	}
 	free(interpreted_delimiter);
 	return (0);
-}
-
-int	finalize_heredoc(int fd, char *tmp_name)
-{
-	int	ret;
-	int	final_ret;
-
-	close(fd);
-	fd = open(tmp_name, O_RDONLY);
-	if (fd < 0)
-	{
-		perror("open heredoc (finalize)");
-		free(tmp_name);
-		return (-1);
-	}
-	ret = dup2(fd, STDIN_FILENO);
-	close(fd);
-	unlink(tmp_name);
-	free(tmp_name);
-	if (ret >= 0)
-		final_ret = 0;
-	else
-		final_ret = -1;
-	return (final_ret);
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -3394,7 +3482,7 @@ void	local_set(t_env **local, const char *key, const char *val)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/13 16:25:12 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/14 20:20:28 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -3472,10 +3560,13 @@ int	main(int argc, char **argv, char **envp)
 {
 	t_data	*data;
 	int		exit_status;
+	char	**env_copy;
 
 	(void)argc;
 	(void)argv;
-	data = init_minishell(envp);
+	env_copy = copy_env(envp);
+	increment_shlvl((&env_copy));
+	data = init_minishell(env_copy);
 	set_minishell_signals();
 	process_input(data);
 	exit_status = clean_minishell(data);
@@ -3489,7 +3580,7 @@ int	main(int argc, char **argv, char **envp)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:00:22 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 18:34:12 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 18:16:48 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -3527,26 +3618,12 @@ char	*expand_param(const char *expr, t_data *data)
 	char	*var;
 	char	*op;
 	char	*word;
-	char	*val;
 	char	*res;
 
 	var = extract_varname(expr);
 	op = extract_op(expr + strlen(var));
 	word = extract_word(expr + strlen(var) + strlen(op), op);
-	val = env_get(data->local_vars, var);
-	if (!val)
-		val = env_get(data->env, var);
-	if ((!val || !*val) && strcmp(op, ":-") == 0)
-		res = strdup(word);
-	else if ((!val || !*val) && strcmp(op, ":=") == 0)
-	{
-		env_set(&data->env, var, word);
-		res = strdup(word);
-	}
-	else if (val && *val)
-		res = strdup(val);
-	else
-		res = strdup("");
+	res = apply_param_op(var, op, word, data);
 	free(var);
 	free(op);
 	free(word);
@@ -4115,10 +4192,10 @@ t_command	*parse_pipeline(t_token **cur)
 /*                                                        :::      ::::::::   */
 /*   parse_redirection.c                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 16:40:53 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:49:41 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 20:08:25 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -4187,6 +4264,22 @@ bool	handle_redir_heredoc(t_command *cmd, const char *target_val)
 	}
 	cmd->heredoc = 1;
 	return (true);
+}
+
+int	prepare_all_heredocs(t_cmdlist *cmdlist)
+{
+	t_andor	*node;
+	int		ret;
+
+	node = cmdlist->andor;
+	while (node)
+	{
+		ret = process_pipeline_heredocs(node->pipeline);
+		if (ret < 0)
+			return (-1);
+		node = node->next;
+	}
+	return (0);
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -4556,12 +4649,12 @@ bool	handle_special_input_cases(t_data *data)
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   redirections.c                                     :+:      :+:    :+:   */
+/*   redirection.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
-/*   Updated: 2025/04/26 17:33:22 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 20:05:18 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -4635,26 +4728,24 @@ int	handle_output_append_redirection(t_command *cmd)
 
 int	handle_heredoc(t_command *cmd)
 {
-	int		fd;
-	char	*tmp_name;
-	int		ret;
+	int	fd;
 
-	fd = open_tmp_heredoc_file(&tmp_name);
+	fd = open(cmd->heredoc_tmp, O_RDONLY);
 	if (fd < 0)
 	{
 		perror("open heredoc");
 		return (-1);
 	}
-	ret = read_and_write_heredoc(fd, cmd->input);
-	if (ret < 0)
+	if (dup2(fd, STDIN_FILENO) < 0)
 	{
+		perror("dup2 heredoc");
 		close(fd);
-		unlink(tmp_name);
-		free(tmp_name);
 		return (-1);
 	}
-	ret = finalize_heredoc(fd, tmp_name);
-	return (ret);
+	close(fd);
+	unlink(cmd->heredoc_tmp);
+	free(cmd->heredoc_tmp);
+	return (0);
 }
 
 int	handle_redirection(t_command *cmd)
@@ -5077,12 +5168,139 @@ void	append_char_as_string(t_buffer *buffer, char c)
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
+/*   utils2.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/14 20:07:13 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/05/14 20:17:52 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+int	process_one_heredoc(t_command *cmd)
+{
+	int	fd;
+
+	if (!cmd->heredoc)
+		return (0);
+	fd = open_tmp_heredoc_file(&cmd->heredoc_tmp);
+	if (fd < 0)
+		return (perror("open heredoc"), -1);
+	if (read_and_write_heredoc(fd, cmd->input) < 0)
+	{
+		close(fd);
+		unlink(cmd->heredoc_tmp);
+		free(cmd->heredoc_tmp);
+		return (-1);
+	}
+	close(fd);
+	return (0);
+}
+
+int	process_pipeline_heredocs(t_command *cmd)
+{
+	int	ret;
+
+	while (cmd)
+	{
+		ret = process_one_heredoc(cmd);
+		if (ret < 0)
+			return (-1);
+		cmd = cmd->next_pipe;
+	}
+	return (0);
+}
+
+void	increment_shlvl(char ***envp)
+{
+	int		i;
+	int		level;
+	char	*old;
+	char	*new_val;
+	char	*joined;
+
+	i = 0;
+	while ((*envp)[i] && ft_strncmp((*envp)[i], "SHLVL=", 6) != 0)
+		i++;
+	if ((*envp)[i])
+	{
+		old = (*envp)[i] + 6;
+		level = ft_atoi(old) + 1;
+		new_val = ft_itoa(level);
+		joined = ft_strjoin("SHLVL=", new_val);
+		free(new_val);
+		free((*envp)[i]);
+		(*envp)[i] = joined;
+	}
+	else
+		*envp = append_env(*envp, "SHLVL=1");
+}
+
+char	**copy_env(char **envp)
+{
+	char	**copy;
+	size_t	count;
+	size_t	i;
+
+	count = 0;
+	while (envp[count])
+		count++;
+	copy = malloc(sizeof(char *) * (count + 1));
+	if (!copy)
+		exit(EXIT_FAILURE);
+	i = 0;
+	while (i < count)
+	{
+		copy[i] = ft_strdup(envp[i]);
+		if (!copy[i])
+		{
+			while (i--)
+				free(copy[i]);
+			free(copy);
+			exit(EXIT_FAILURE);
+		}
+		i++;
+	}
+	copy[count] = NULL;
+	return (copy);
+}
+
+char	**append_env(char **envp, char *newvar)
+{
+	char	**new_env;
+	size_t	count;
+	size_t	i;
+
+	count = 0;
+	while (envp[count])
+		count++;
+	new_env = malloc(sizeof(char *) * (count + 2));
+	if (!new_env)
+		exit(EXIT_FAILURE);
+	i = 0;
+	while (i < count)
+	{
+		new_env[i] = envp[i];
+		i++;
+	}
+	new_env[i++] = ft_strdup(newvar);
+	if (!new_env[i - 1])
+		exit(EXIT_FAILURE);
+	new_env[i] = NULL;
+	free(envp);
+	return (new_env);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
 /*   utils_and_more.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 14:51:37 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:51:19 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 15:55:07 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -5148,6 +5366,7 @@ t_command	*init_command(void)
 	cmd->output = NULL;
 	cmd->append = 0;
 	cmd->heredoc = 0;
+	cmd->heredoc_tmp = NULL;
 	cmd->subshell = false;
 	cmd->redirs = NULL;
 	cmd->next_pipe = NULL;
@@ -5452,7 +5671,7 @@ extern volatile sig_atomic_t	g_exit_status;
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/13 15:31:00 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/14 20:19:45 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -5489,6 +5708,7 @@ typedef struct s_command
 	char				*output;
 	int					append;
 	int					heredoc;
+	char				*heredoc_tmp;
 	bool				subshell;
 	struct s_redir		*redirs;
 	struct s_command	*next_pipe;
@@ -5643,7 +5863,6 @@ int						handle_redirection(t_command *cmd);
 char					*generate_tmp_name(void);
 int						open_tmp_heredoc_file(char **tmp_name);
 int						read_and_write_heredoc(int fd, const char *delimiter);
-int						finalize_heredoc(int fd, char *tmp_name);
 t_token					*create_token(const char *str);
 bool					is_whitespace(char c);
 size_t					skip_whitespace(const char *input, size_t i);
@@ -5972,5 +6191,67 @@ void					do_export_no_assign(t_data *data, t_export_kv *kv);
 int						do_export_append(t_data *data, t_export_kv *kv);
 int						do_export_assign(t_data *data, t_export_kv *kv);
 char					*read_complete_line(void);
-
+char					*append_char(char *res, char c);
+char					*append_var(char *res, const char *s, t_env *env,
+							int *i);
+void					handle_append_flag(char *arg, t_export_kv *kv);
+void					handle_equal_sign(char *arg, t_export_kv *kv);
+char					*extract_arith_expr(t_token_state *st);
+char					*extract_subst_cmd(t_token_state *st);
+char					*read_subst_output(const char *cmd, t_data *data);
+char					*get_env_value(const char *var, t_data *data);
+char					*apply_param_op(const char *var, const char *op,
+							const char *word, t_data *data);
+int						prepare_all_heredocs(t_cmdlist *cmdlist);
+int						process_one_heredoc(t_command *cmd);
+int						process_pipeline_heredocs(t_command *cmd);
+void					increment_shlvl(char ***envp);
+char					**copy_env(char **envp);
+char					**append_env(char **envp, char *newvar);
 #endif
+NAME = minishell
+SRCS =  builtin_unset.c env_add_remove.c exec_pipe_utils.c exec_extern.c \
+		lexer_main.c main.c parse_main.c redirection.c token_adv.c cleanup_base.c \
+		heredoc_file.c lexer_buffer.c parse_utils.c parse_andor.c \
+		parse_subshell_collect.c parse_pipeline.c \
+		signals.c exec_main.c utils.c env_utils.c parse_arg.c exec_path_utils.c \
+		token_create.c lexer_collect.c lexer_chars.c exec_pipe.c token_base.c \
+		cleanup_utils.c globbing_read.c lexer_op_1.c lexer_op_2.c \
+		process_line.c utils_and_more.c local_vars.c lexer_expand_var.c token_utils.c token_expand.c \
+		parse_command.c parse_subshell.c parse_subshell_utils.c parse_inter.c \
+		parse_redirection.c exec_fork.c exec_subshell.c exec_redir_setup.c \
+		heredoc_memo.c builtin_base.c builtin_export.c builtin_export_utils.c \
+		builtin_export_arg.c builtin_dispatch.c builtin_exit.c builtin_utils.c env_init.c \
+		env_update.c globbing.c globbing_matches.c param_expand.c expander.c arith.c \
+		exec_line.c bultin_export_utils1.c complete_line.c expander_utils.c expander_utils2.c \
+		utils2.c
+
+
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror
+LIBFT_DIR = ./libft
+LIBFT = $(LIBFT_DIR)/libft.a
+LIBS = -lreadline
+
+all: $(NAME)
+
+$(NAME): $(LIBFT) $(SRCS)
+	$(CC) $(CFLAGS) $(SRCS) -L$(LIBFT_DIR) -lft $(LIBS) -o $(NAME)
+
+$(LIBFT):
+	$(MAKE) -C $(LIBFT_DIR)
+
+clean:
+	rm -f $(NAME)
+	$(MAKE) -C $(LIBFT_DIR) clean
+
+fclean: clean
+	rm -f $(NAME)
+	$(MAKE) -C $(LIBFT_DIR) fclean
+
+re: fclean all
+
+debug: $(NAME)
+	@valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes --track-origins=yes --suppressions=ignore_readline_leaks.supp --log-file="leaks.log" ./minishell
+
+.PHONY: all clean fclean re

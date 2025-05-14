@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/07 20:00:22 by michel            #+#    #+#             */
-/*   Updated: 2025/05/08 18:34:12 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 18:16:48 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,26 +44,12 @@ char	*expand_param(const char *expr, t_data *data)
 	char	*var;
 	char	*op;
 	char	*word;
-	char	*val;
 	char	*res;
 
 	var = extract_varname(expr);
 	op = extract_op(expr + strlen(var));
 	word = extract_word(expr + strlen(var) + strlen(op), op);
-	val = env_get(data->local_vars, var);
-	if (!val)
-		val = env_get(data->env, var);
-	if ((!val || !*val) && strcmp(op, ":-") == 0)
-		res = strdup(word);
-	else if ((!val || !*val) && strcmp(op, ":=") == 0)
-	{
-		env_set(&data->env, var, word);
-		res = strdup(word);
-	}
-	else if (val && *val)
-		res = strdup(val);
-	else
-		res = strdup("");
+	res = apply_param_op(var, op, word, data);
 	free(var);
 	free(op);
 	free(word);

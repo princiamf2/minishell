@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parse_redirection.c                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 16:40:53 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:49:41 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 20:08:25 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,4 +75,20 @@ bool	handle_redir_heredoc(t_command *cmd, const char *target_val)
 	}
 	cmd->heredoc = 1;
 	return (true);
+}
+
+int	prepare_all_heredocs(t_cmdlist *cmdlist)
+{
+	t_andor	*node;
+	int		ret;
+
+	node = cmdlist->andor;
+	while (node)
+	{
+		ret = process_pipeline_heredocs(node->pipeline);
+		if (ret < 0)
+			return (-1);
+		node = node->next;
+	}
+	return (0);
 }

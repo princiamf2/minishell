@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   exec_pipe.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:09:04 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/04/30 13:41:17 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 19:44:00 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,10 +89,16 @@ int	*create_pipes(int n)
 
 int	execute_child(t_command *cmd, int index, t_pipe_info *pi, t_data *data)
 {
-	setup_pipes_for_child(index, pi);
+	if (cmd->heredoc)
+	{
+		if (handle_redirection(cmd) < 0)
+			exit(1);
+	}
+	else
+	{
+		setup_pipes_for_child(index, pi);
+	}
 	close_unused_pipes(pi);
-	if (handle_redirection(cmd) < 0)
-		exit(1);
 	execute_builtin_or_command(cmd, data);
 	return (0);
 }

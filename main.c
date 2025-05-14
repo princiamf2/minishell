@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/13 16:25:12 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/14 20:20:28 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,10 +84,13 @@ int	main(int argc, char **argv, char **envp)
 {
 	t_data	*data;
 	int		exit_status;
+	char	**env_copy;
 
 	(void)argc;
 	(void)argv;
-	data = init_minishell(envp);
+	env_copy = copy_env(envp);
+	increment_shlvl((&env_copy));
+	data = init_minishell(env_copy);
 	set_minishell_signals();
 	process_input(data);
 	exit_status = clean_minishell(data);

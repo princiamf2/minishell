@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   exec_main.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/04/30 13:37:59 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 18:40:42 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,8 @@ int	execute_cmdlist(t_cmdlist *commands, t_data *data)
 
 	last_status = data->exit_status;
 	node = commands;
+	if (prepare_all_heredocs(commands) < 0)
+		return (1);
 	while (node)
 	{
 		if (!node->andor)

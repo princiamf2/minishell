@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/13 17:44:54 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/14 20:19:45 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ typedef struct s_command
 	char				*output;
 	int					append;
 	int					heredoc;
+	char				*heredoc_tmp;
 	bool				subshell;
 	struct s_redir		*redirs;
 	struct s_command	*next_pipe;
@@ -197,7 +198,6 @@ int						handle_redirection(t_command *cmd);
 char					*generate_tmp_name(void);
 int						open_tmp_heredoc_file(char **tmp_name);
 int						read_and_write_heredoc(int fd, const char *delimiter);
-int						finalize_heredoc(int fd, char *tmp_name);
 t_token					*create_token(const char *str);
 bool					is_whitespace(char c);
 size_t					skip_whitespace(const char *input, size_t i);
@@ -529,4 +529,18 @@ char					*read_complete_line(void);
 char					*append_char(char *res, char c);
 char					*append_var(char *res, const char *s, t_env *env,
 							int *i);
+void					handle_append_flag(char *arg, t_export_kv *kv);
+void					handle_equal_sign(char *arg, t_export_kv *kv);
+char					*extract_arith_expr(t_token_state *st);
+char					*extract_subst_cmd(t_token_state *st);
+char					*read_subst_output(const char *cmd, t_data *data);
+char					*get_env_value(const char *var, t_data *data);
+char					*apply_param_op(const char *var, const char *op,
+							const char *word, t_data *data);
+int						prepare_all_heredocs(t_cmdlist *cmdlist);
+int						process_one_heredoc(t_command *cmd);
+int						process_pipeline_heredocs(t_command *cmd);
+void					increment_shlvl(char ***envp);
+char					**copy_env(char **envp);
+char					**append_env(char **envp, char *newvar);
 #endif

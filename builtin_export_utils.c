@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:04:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/08 18:42:42 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/13 18:02:45 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,30 +14,9 @@
 
 bool	extract_export_kv(char *arg, t_export_kv *kv)
 {
-	char	*plus;
-
-	kv->append = false;
-	plus = ft_strnstr(arg, "+=", ft_strlen(arg));
-	if (plus)
-	{
-		kv->append = true;
-		kv->eq = plus;
-		kv->key = extract_key(arg, plus);
-		kv->raw_value = ft_strdup(plus + 2);
-	}
-	kv->eq = ft_strchr(arg, '=');
-	if (kv->eq)
-	{
-		kv->key = extract_key(arg, kv->eq);
-		kv->raw_value = extract_value(kv->eq);
-	}
-	else
-	{
-		kv->eq = NULL;
-		kv->key = ft_strdup(arg);
-		kv->raw_value = NULL;
-	}
-	if (!kv->key)
+	handle_append_flag(arg, kv);
+	handle_equal_sign(arg, kv);
+	if (kv->key == NULL)
 	{
 		perror("minishell: strdup/substr failed for export key");
 		free(kv->raw_value);

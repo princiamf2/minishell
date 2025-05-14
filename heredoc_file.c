@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   heredoc_file.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 02:03:50 by michel            #+#    #+#             */
-/*   Updated: 2025/04/30 14:00:23 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 20:01:39 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,28 +87,4 @@ int	read_and_write_heredoc(int fd, const char *raw_delimiter)
 	}
 	free(interpreted_delimiter);
 	return (0);
-}
-
-int	finalize_heredoc(int fd, char *tmp_name)
-{
-	int	ret;
-	int	final_ret;
-
-	close(fd);
-	fd = open(tmp_name, O_RDONLY);
-	if (fd < 0)
-	{
-		perror("open heredoc (finalize)");
-		free(tmp_name);
-		return (-1);
-	}
-	ret = dup2(fd, STDIN_FILENO);
-	close(fd);
-	unlink(tmp_name);
-	free(tmp_name);
-	if (ret >= 0)
-		final_ret = 0;
-	else
-		final_ret = -1;
-	return (final_ret);
 }

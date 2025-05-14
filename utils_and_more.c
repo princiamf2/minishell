@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils_and_more.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 14:51:37 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:51:19 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/14 15:55:07 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ t_command	*init_command(void)
 	cmd->output = NULL;
 	cmd->append = 0;
 	cmd->heredoc = 0;
+	cmd->heredoc_tmp = NULL;
 	cmd->subshell = false;
 	cmd->redirs = NULL;
 	cmd->next_pipe = NULL;

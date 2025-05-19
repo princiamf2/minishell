@@ -3,13 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   heredoc_memo.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 17:11:58 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:47:47 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/19 19:40:41 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#define _POSIX_C_SOURCE 200809L
 #include "minishell.h"
 
 char	*read_heredoc(const char *delim, bool quoted)
@@ -35,17 +36,20 @@ bool	process_heredoc_line(const char *delim, char **content, size_t *len,
 {
 	char	*line;
 
-	line = readline("> ");
-	if (!line)
-		return (true);
-	if (ft_strcmp(line, delim) == 0)
+	line = readline("heredoc> ");
+	if (g_exit_status == 130)
 	{
 		free(line);
 		return (true);
 	}
+	if (ft_strcmp(line, delim) == 0)
+	{
+		free(line);
+		return (1);
+	}
 	append_line(content, len, cap, line);
 	free(line);
-	return (false);
+	return (0);
 }
 
 void	append_line(char **content, size_t *len, size_t *cap, const char *line)
@@ -92,4 +96,17 @@ void	ensure_content_capacity(char **content_ptr, size_t current_len,
 		*content_ptr = tmp;
 		*cap_ptr = new_cap;
 	}
+}
+
+void	install_heredoc_signals(void)
+{
+	struct sigaction	act;
+
+	rl_catch_signals = 0;
+	act.sa_handler = sigint_heredoc_handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	sigaction(SIGINT, &act, NULL);
+	act.sa_handler = SIG_IGN;
+	sigaction(SIGQUIT, &act, NULL);
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_export_arg.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 17:35:50 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:33:02 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/15 14:48:50 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,8 @@ int	process_export_argument(char *arg, t_data *data)
 
 	kv.key = NULL;
 	kv.raw_value = NULL;
+	kv.eq = NULL;
+	kv.append = NULL;
 	if (!extract_export_kv(arg, &kv))
 		return (1);
 	if (!validate_export_key(kv.key, arg))

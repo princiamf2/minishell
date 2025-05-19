@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/08 23:29:58 by michel            #+#    #+#             */
-/*   Updated: 2025/05/14 20:05:18 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 18:07:35 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,6 +82,7 @@ int	handle_heredoc(t_command *cmd)
 {
 	int	fd;
 
+	printf("DEBUG heredoc_tmp = %p \"%s\"\n", cmd->heredoc_tmp, cmd->heredoc_tmp);
 	fd = open(cmd->heredoc_tmp, O_RDONLY);
 	if (fd < 0)
 	{

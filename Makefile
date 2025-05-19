@@ -13,7 +13,7 @@ SRCS =  builtin_unset.c env_add_remove.c exec_pipe_utils.c exec_extern.c \
 		builtin_export_arg.c builtin_dispatch.c builtin_exit.c builtin_utils.c env_init.c \
 		env_update.c globbing.c globbing_matches.c param_expand.c expander.c arith.c \
 		exec_line.c bultin_export_utils1.c complete_line.c expander_utils.c expander_utils2.c \
-		utils2.c
+		utils2.c heredoc_file_utils.c
 
 
 CC = gcc

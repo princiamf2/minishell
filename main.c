@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/14 20:20:28 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/15 17:03:24 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ t_data	*init_minishell(char **envp)
 void	process_input(t_data *data)
 {
 	char	*line;
-
+	
 	while (1)
 	{
 		line = read_complete_line();

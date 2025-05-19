@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builtin_utils.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 17:45:06 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:36:18 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/15 13:59:39 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,13 @@ int	is_numeric(const char *str)
 
 int	compare_env_vars(const void *a, const void *b)
 {
+	printf(
+        "compare_env_vars: a=%p \"%s\" | b=%p \"%s\"\n",
+        (void*)*(const char **)a,
+        *(const char **)a ? *(const char **)a : "(null)",
+        (void*)*(const char **)b,
+        *(const char **)b ? *(const char **)b : "(null)"
+    );
 	return (strcmp(*(const char **)a, *(const char **)b));
 }
 

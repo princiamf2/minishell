@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 16:40:53 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/05/14 20:08:25 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 18:58:04 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ void	parse_redirection(t_command *cmd, t_token **cur)
 	else if (redir_token->type == REDIR_IN)
 		success = handle_redir_input(cmd, target_token->value);
 	else if (redir_token->type == HEREDOC)
-		success = handle_redir_heredoc(cmd, target_token->value);
+		success = handle_redir_heredoc(cmd, target_token->value, target_token->quoted);
 	if (success)
 		*cur = target_token->next;
 }
@@ -63,8 +63,10 @@ bool	handle_redir_input(t_command *cmd, const char *target_val)
 	return (true);
 }
 
-bool	handle_redir_heredoc(t_command *cmd, const char *target_val)
+bool	handle_redir_heredoc(t_command *cmd, const char *target_val, bool quoted)
 {
+	t_redir *node;
+
 	if (cmd->input)
 		free(cmd->input);
 	cmd->input = ft_strdup(target_val);
@@ -74,6 +76,14 @@ bool	handle_redir_heredoc(t_command *cmd, const char *target_val)
 		return (false);
 	}
 	cmd->heredoc = 1;
+	node = malloc(sizeof(*node));
+    if (!node)
+        return (perror("malloc"), false);
+    node->type         = HEREDOC;
+    node->target       = ft_strdup(target_val);
+    node->delim_quoted = quoted;
+    node->next         = cmd->redirs;
+    cmd->redirs        = node;
 	return (true);
 }
 

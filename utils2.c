@@ -6,44 +6,46 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 20:07:13 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/14 20:17:52 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 17:17:57 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	process_one_heredoc(t_command *cmd)
+int	process_one_heredoc(t_command *cmd, t_redir *redir)
 {
-	int	fd;
+	int	res;
 
-	if (!cmd->heredoc)
-		return (0);
-	fd = open_tmp_heredoc_file(&cmd->heredoc_tmp);
-	if (fd < 0)
-		return (perror("open heredoc"), -1);
-	if (read_and_write_heredoc(fd, cmd->input) < 0)
-	{
-		close(fd);
-		unlink(cmd->heredoc_tmp);
-		free(cmd->heredoc_tmp);
+	res = read_and_write_heredoc(redir->target, redir->delim_quoted,
+			&cmd->heredoc_tmp);
+	if (res == SIGINT)
 		return (-1);
-	}
-	close(fd);
+	if (res < 0)
+		return (-1);
 	return (0);
 }
 
-int	process_pipeline_heredocs(t_command *cmd)
+int process_pipeline_heredocs(t_command *cmd)
 {
-	int	ret;
+    t_redir *r;
+    int      ret;
 
-	while (cmd)
-	{
-		ret = process_one_heredoc(cmd);
-		if (ret < 0)
-			return (-1);
-		cmd = cmd->next_pipe;
-	}
-	return (0);
+    while (cmd)
+    {
+        r = cmd->redirs;
+        while (r)
+        {
+            if (r->type == HEREDOC)
+            {
+                ret = process_one_heredoc(cmd, r);
+                if (ret < 0)
+                    return (-1);
+            }
+            r = r->next;
+        }
+        cmd = cmd->next_pipe;
+    }
+    return (0);
 }
 
 void	increment_shlvl(char ***envp)

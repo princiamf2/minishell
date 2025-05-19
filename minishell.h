@@ -6,7 +6,7 @@
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/14 20:19:45 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 19:20:05 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,11 +197,11 @@ int						handle_heredoc(t_command *cmd);
 int						handle_redirection(t_command *cmd);
 char					*generate_tmp_name(void);
 int						open_tmp_heredoc_file(char **tmp_name);
-int						read_and_write_heredoc(int fd, const char *delimiter);
+int						read_and_write_heredoc(char *raw_delim,
+							int delim_quoted, char **heredoc_tmp);
 t_token					*create_token(const char *str);
 bool					is_whitespace(char c);
 size_t					skip_whitespace(const char *input, size_t i);
-
 void					handle_dollar_question(const char *input, size_t *i,
 							t_buffer *buf, t_data *data);
 void					handle_dollar_variable(const char *input, size_t *i,
@@ -435,7 +435,7 @@ bool					handle_redir_output(t_command *cmd,
 bool					handle_redir_input(t_command *cmd,
 							const char *target_val);
 bool					handle_redir_heredoc(t_command *cmd,
-							const char *target_val);
+							const char *target_val, bool quoted);
 bool					parse_andor_append(t_andor **tail_ptr, t_token **cur);
 
 int						handle_exec_path_not_found(t_command *cmd,
@@ -463,8 +463,8 @@ int						update_or_add_env_var(t_data *data, char *key,
 							char *final_value);
 int						process_and_update_env(t_data *data, t_export_kv *kv);
 
-bool					process_heredoc_input_line(int fd,
-							const char *interpreted_delimiter);
+int						process_heredoc_input_line(int fd, char *delim,
+							int delim_quoted);
 
 bool					validate_tok_aft_andor(t_token **current_token_ptr_ptr);
 
@@ -538,9 +538,15 @@ char					*get_env_value(const char *var, t_data *data);
 char					*apply_param_op(const char *var, const char *op,
 							const char *word, t_data *data);
 int						prepare_all_heredocs(t_cmdlist *cmdlist);
-int						process_one_heredoc(t_command *cmd);
+int						process_one_heredoc(t_command *cmd, t_redir *redir);
 int						process_pipeline_heredocs(t_command *cmd);
 void					increment_shlvl(char ***envp);
 char					**copy_env(char **envp);
 char					**append_env(char **envp, char *newvar);
+void					sigint_heredoc_handler(int signo);
+void					install_heredoc_signals(void);
+void					restore_default_signals(void);
+char					*prepare_delim(char *raw, int quoted);
+int						loop_heredoc(int fd, char *delim, int quoted);
+int						cleanup_heredoc(int fd, int status, char *tmpname);
 #endif

@@ -337,10 +337,10 @@ int	builtin_exit(char **args, t_data *data)
 /*                                                        :::      ::::::::   */
 /*   builtin_export_arg.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 17:35:50 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:33:02 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/15 14:48:50 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -370,6 +370,8 @@ int	process_export_argument(char *arg, t_data *data)
 
 	kv.key = NULL;
 	kv.raw_value = NULL;
+	kv.eq = NULL;
+	kv.append = NULL;
 	if (!extract_export_kv(arg, &kv))
 		return (1);
 	if (!validate_export_key(kv.key, arg))
@@ -411,7 +413,8 @@ int	handle_export_arguments(char **args, t_data *data)
   }
   return (0);
 }
-*//* ************************************************************************** */
+*/
+/* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   builtin_export.c                                   :+:      :+:    :+:   */
@@ -523,7 +526,7 @@ void	print_export_key_only(const char *env_var)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:04:31 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/13 18:02:45 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/15 14:58:02 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -531,8 +534,10 @@ void	print_export_key_only(const char *env_var)
 
 bool	extract_export_kv(char *arg, t_export_kv *kv)
 {
-	handle_append_flag(arg, kv);
-	handle_equal_sign(arg, kv);
+    handle_append_flag(arg, kv);
+	if (kv->append)
+		return (true);
+    handle_equal_sign(arg, kv);
 	if (kv->key == NULL)
 	{
 		perror("minishell: strdup/substr failed for export key");
@@ -656,10 +661,10 @@ void	unset_env_variable(t_env **env, char *key)
 /*                                                        :::      ::::::::   */
 /*   builtin_utils.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 17:45:06 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:36:18 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/15 13:59:39 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -717,6 +722,13 @@ int	is_numeric(const char *str)
 
 int	compare_env_vars(const void *a, const void *b)
 {
+	printf(
+        "compare_env_vars: a=%p \"%s\" | b=%p \"%s\"\n",
+        (void*)*(const char **)a,
+        *(const char **)a ? *(const char **)a : "(null)",
+        (void*)*(const char **)b,
+        *(const char **)b ? *(const char **)b : "(null)"
+    );
 	return (strcmp(*(const char **)a, *(const char **)b));
 }
 
@@ -742,7 +754,7 @@ void	free_env_array(char **env_array)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 18:07:35 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/08 18:48:29 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/15 14:50:57 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -751,6 +763,7 @@ void	free_env_array(char **env_array)
 void	do_export_no_assign(t_data *data, t_export_kv *kv)
 {
 	char	*current;
+	char	*exists_in_env;
 
 	current = env_get(data->local_vars, kv->key);
 	if (current)
@@ -758,8 +771,12 @@ void	do_export_no_assign(t_data *data, t_export_kv *kv)
 		env_set(&data->env, kv->key, current);
 		env_unset(&data->local_vars, kv->key);
 	}
-	else if (!env_get(data->env, kv->key))
-		env_set(&data->env, kv->key, "");
+	else
+	{
+		exists_in_env = env_get(data->env, kv->key);
+		if (!exists_in_env)
+			env_set(&data->env, kv->key, "");
+	}
 }
 
 int	do_export_append(t_data *data, t_export_kv *kv)
@@ -767,27 +784,28 @@ int	do_export_append(t_data *data, t_export_kv *kv)
 	char	*current;
 	char	*suffix;
 	char	*to_set;
+	int		ret;
 
 	current = env_get(data->env, kv->key);
 	suffix = interpret_raw_value(kv->raw_value);
-	if (current)
-		to_set = ft_strjoin(current, suffix);
-	else
-		to_set = ft_strjoin("", suffix);
+	to_set = current ? ft_strjoin(current, suffix) : ft_strjoin("", suffix);
 	free(suffix);
 	free(kv->raw_value);
 	kv->raw_value = NULL;
-	return (update_or_add_env_var(data, kv->key, to_set));
+	ret = update_or_add_env_var(data, kv->key, to_set);
+	return (ret);
 }
 
 int	do_export_assign(t_data *data, t_export_kv *kv)
 {
 	char	*to_set;
+	int		ret;
 
 	to_set = interpret_raw_value(kv->raw_value);
 	free(kv->raw_value);
 	kv->raw_value = NULL;
-	return (update_or_add_env_var(data, kv->key, to_set));
+	ret = update_or_add_env_var(data, kv->key, to_set);
+	return (ret);
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -1550,7 +1568,7 @@ void	exec_line(const char *cmd, t_data *data)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 22:14:29 by michel            #+#    #+#             */
-/*   Updated: 2025/05/14 18:40:42 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 17:11:18 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1720,7 +1738,7 @@ char	*search_executable_in_paths(char *paths, const char *cmd)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/25 14:09:04 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/14 19:44:00 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/15 13:48:49 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1803,15 +1821,12 @@ int	*create_pipes(int n)
 
 int	execute_child(t_command *cmd, int index, t_pipe_info *pi, t_data *data)
 {
-	if (cmd->heredoc)
+	if (cmd->heredoc || cmd->input || cmd->output)
 	{
 		if (handle_redirection(cmd) < 0)
 			exit(1);
 	}
-	else
-	{
-		setup_pipes_for_child(index, pi);
-	}
+	setup_pipes_for_child(index, pi);
 	close_unused_pipes(pi);
 	execute_builtin_or_command(cmd, data);
 	return (0);
@@ -2259,7 +2274,7 @@ char	*apply_param_op(const char *var, const char *op, const char *word,
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 18:06:46 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/13 18:06:48 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/15 14:51:34 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2601,7 +2616,7 @@ int	process_directory_entries(t_globinfo *info, const char *dirpath,
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/09 02:03:50 by michel            #+#    #+#             */
-/*   Updated: 2025/05/14 20:01:39 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 17:56:49 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2635,52 +2650,125 @@ int	open_tmp_heredoc_file(char **tmp_name)
 	*tmp_name = generate_tmp_name();
 	unlink(*tmp_name);
 	fd = open(*tmp_name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+	if (fd < 0)
+	{
+		free(*tmp_name);
+		*tmp_name = NULL;
+		return (-1);
+	}
 	return (fd);
 }
 
-bool	process_heredoc_input_line(int fd, const char *interpreted_delimiter)
+int	process_heredoc_input_line(int fd, char *delim, int delim_quoted)
 {
 	char	*line;
-	bool	should_break;
+	int		ret;
+	char	*tmp;
 
-	should_break = false;
-	line = readline("herdoc> ");
+	line = readline("heredoc> ");
 	if (!line)
+		return (SIGINT);
+	if (!delim_quoted)
 	{
-		should_break = true;
-	}
-	else
-	{
-		if (ft_strcmp(line, interpreted_delimiter) == 0)
-		{
-			should_break = true;
-		}
-		else
-		{
-			write(fd, line, ft_strlen(line));
-			write(fd, "\n", 1);
-		}
+		tmp = interpret_raw_value(line);
 		free(line);
+		line = tmp;
+		if (!line)
+			return (-1);
 	}
-	return (should_break);
+	if (!ft_strcmp(line, delim))
+	{
+		free(line);
+		return (0);
+	}
+	ret = write(fd, line, ft_strlen(line));
+	write(fd, "\n", 1);
+	free(line);
+	if (ret < 0)
+		return (-1);
+	return (1);
 }
 
-int	read_and_write_heredoc(int fd, const char *raw_delimiter)
+int	read_and_write_heredoc(char *raw_delim, int delim_quoted,
+		char **heredoc_tmp)
 {
-	char	*interpreted_delimiter;
+	char	*delim;
+	int		fd;
+	int		status;
 
-	interpreted_delimiter = interpret_raw_value(raw_delimiter);
-	if (!interpreted_delimiter)
+	delim = prepare_delim(raw_delim, delim_quoted);
+	if (!delim)
+		return (-1);
+	fd = open_tmp_heredoc_file(heredoc_tmp);
+	if (fd < 0)
 	{
-		perror("minishell: interpret_raw_value failed for heredoc delimiter");
+		free(delim);
+		perror("heredoc");
 		return (-1);
 	}
-	while (true)
+	install_heredoc_signals();
+	status = loop_heredoc(fd, delim, delim_quoted);
+	restore_default_signals();
+	free(delim);
+	return (cleanup_heredoc(fd, status, *heredoc_tmp));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   heredoc_file_utils.c                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/19 17:54:09 by mm-furi           #+#    #+#             */
+/*   Updated: 2025/05/19 17:55:23 by mm-furi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "minishell.h"
+
+char	*prepare_delim(char *raw, int quoted)
+{
+	char	*tmp;
+	char	*r;
+
+	if (!raw)
+		return (NULL);
+	tmp = ft_strdup(raw);
+	if (!tmp)
+		return (NULL);
+	if (!quoted)
 	{
-		if (process_heredoc_input_line(fd, interpreted_delimiter))
-			break ;
+		r = interpret_raw_value(tmp);
+		free(tmp);
+		tmp = r;
+		if (!tmp)
+			return (NULL);
 	}
-	free(interpreted_delimiter);
+	return (tmp);
+}
+
+int	loop_heredoc(int fd, char *delim, int quoted)
+{
+	int	status;
+
+	status = 1;
+	while (status == 1)
+		status = process_heredoc_input_line(fd, delim, quoted);
+	return (status);
+}
+
+int	cleanup_heredoc(int fd, int status, char *tmpname)
+{
+	if (close(fd) < 0)
+		return (-1);
+	if (status == SIGINT)
+	{
+		unlink(tmpname);
+		free(tmpname);
+		return (SIGINT);
+	}
+	if (status < 0)
+		return (-1);
 	return (0);
 }
 /* ************************************************************************** */
@@ -2688,10 +2776,10 @@ int	read_and_write_heredoc(int fd, const char *raw_delimiter)
 /*                                                        :::      ::::::::   */
 /*   heredoc_memo.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 17:11:58 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/04/30 13:47:47 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/15 16:57:31 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2720,17 +2808,20 @@ bool	process_heredoc_line(const char *delim, char **content, size_t *len,
 {
 	char	*line;
 
-	line = readline("> ");
-	if (!line)
-		return (true);
-	if (ft_strcmp(line, delim) == 0)
+	line = readline("heredoc> ");
+	if (g_exit_status == 130)
 	{
 		free(line);
 		return (true);
 	}
+	if (ft_strcmp(line, delim) == 0)
+	{
+		free(line);
+		return (1);
+	}
 	append_line(content, len, cap, line);
 	free(line);
-	return (false);
+	return (0);
 }
 
 void	append_line(char **content, size_t *len, size_t *cap, const char *line)
@@ -2777,6 +2868,19 @@ void	ensure_content_capacity(char **content_ptr, size_t current_len,
 		*content_ptr = tmp;
 		*cap_ptr = new_cap;
 	}
+}
+
+void	install_heredoc_signals(void)
+{
+	struct sigaction	act;
+
+	rl_catch_signals = 0;
+	act.sa_handler = sigint_heredoc_handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	sigaction(SIGINT, &act, NULL);
+	act.sa_handler = SIG_IGN;
+	sigaction(SIGQUIT, &act, NULL);
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -3482,7 +3586,7 @@ void	local_set(t_env **local, const char *key, const char *val)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 18:52:32 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/14 20:20:28 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/15 17:03:24 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -3522,7 +3626,7 @@ t_data	*init_minishell(char **envp)
 void	process_input(t_data *data)
 {
 	char	*line;
-
+	
 	while (1)
 	{
 		line = read_complete_line();
@@ -4195,7 +4299,7 @@ t_command	*parse_pipeline(t_token **cur)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/29 16:40:53 by nicolsan          #+#    #+#             */
-/*   Updated: 2025/05/14 20:08:25 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 17:12:54 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -4780,10 +4884,10 @@ int	handle_redirection(t_command *cmd)
 /*                                                        :::      ::::::::   */
 /*   signals.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolsan <nicolsan@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 20:58:02 by michel            #+#    #+#             */
-/*   Updated: 2025/04/30 13:49:29 by nicolsan         ###   ########.fr       */
+/*   Updated: 2025/05/15 16:59:12 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -4808,6 +4912,22 @@ void	handle_sigint(int sig)
 void	handle_sigquit(int sig)
 {
 	(void)sig;
+}
+
+void restore_default_signals(void)
+{
+    signal(SIGINT,  SIG_DFL);
+    signal(SIGQUIT, SIG_DFL);
+}
+
+void sigint_heredoc_handler(int signo)
+{
+    (void)signo;
+	g_exit_status = 130;
+    rl_replace_line("", 0);
+	rl_point = 0;
+    rl_done = 1;
+	write(STDOUT_FILENO, "\n", 1);
 }
 /* ************************************************************************** */
 /*                                                                            */
@@ -5173,44 +5293,46 @@ void	append_char_as_string(t_buffer *buffer, char c)
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 20:07:13 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/14 20:17:52 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 17:17:57 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	process_one_heredoc(t_command *cmd)
+int	process_one_heredoc(t_command *cmd, t_redir *redir)
 {
-	int	fd;
+	int	res;
 
-	if (!cmd->heredoc)
-		return (0);
-	fd = open_tmp_heredoc_file(&cmd->heredoc_tmp);
-	if (fd < 0)
-		return (perror("open heredoc"), -1);
-	if (read_and_write_heredoc(fd, cmd->input) < 0)
-	{
-		close(fd);
-		unlink(cmd->heredoc_tmp);
-		free(cmd->heredoc_tmp);
+	res = read_and_write_heredoc(redir->target, redir->delim_quoted,
+			&cmd->heredoc_tmp);
+	if (res == SIGINT)
 		return (-1);
-	}
-	close(fd);
+	if (res < 0)
+		return (-1);
 	return (0);
 }
 
-int	process_pipeline_heredocs(t_command *cmd)
+int process_pipeline_heredocs(t_command *cmd)
 {
-	int	ret;
+    t_redir *r;
+    int      ret;
 
-	while (cmd)
-	{
-		ret = process_one_heredoc(cmd);
-		if (ret < 0)
-			return (-1);
-		cmd = cmd->next_pipe;
-	}
-	return (0);
+    while (cmd)
+    {
+        r = cmd->redirs;
+        while (r)
+        {
+            if (r->type == HEREDOC)
+            {
+                ret = process_one_heredoc(cmd, r);
+                if (ret < 0)
+                    return (-1);
+            }
+            r = r->next;
+        }
+        cmd = cmd->next_pipe;
+    }
+    return (0);
 }
 
 void	increment_shlvl(char ***envp)
@@ -5671,7 +5793,7 @@ extern volatile sig_atomic_t	g_exit_status;
 /*   By: mm-furi <mm-furi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/05 14:30:47 by mm-furi           #+#    #+#             */
-/*   Updated: 2025/05/14 20:19:45 by mm-furi          ###   ########.fr       */
+/*   Updated: 2025/05/19 17:56:24 by mm-furi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -5862,11 +5984,11 @@ int						handle_heredoc(t_command *cmd);
 int						handle_redirection(t_command *cmd);
 char					*generate_tmp_name(void);
 int						open_tmp_heredoc_file(char **tmp_name);
-int						read_and_write_heredoc(int fd, const char *delimiter);
+int						read_and_write_heredoc(char *raw_delim,
+							int delim_quoted, char **heredoc_tmp);
 t_token					*create_token(const char *str);
 bool					is_whitespace(char c);
 size_t					skip_whitespace(const char *input, size_t i);
-
 void					handle_dollar_question(const char *input, size_t *i,
 							t_buffer *buf, t_data *data);
 void					handle_dollar_variable(const char *input, size_t *i,
@@ -6128,8 +6250,8 @@ int						update_or_add_env_var(t_data *data, char *key,
 							char *final_value);
 int						process_and_update_env(t_data *data, t_export_kv *kv);
 
-bool					process_heredoc_input_line(int fd,
-							const char *interpreted_delimiter);
+int						process_heredoc_input_line(int fd, char *delim,
+							int delim_quoted);
 
 bool					validate_tok_aft_andor(t_token **current_token_ptr_ptr);
 
@@ -6203,55 +6325,15 @@ char					*get_env_value(const char *var, t_data *data);
 char					*apply_param_op(const char *var, const char *op,
 							const char *word, t_data *data);
 int						prepare_all_heredocs(t_cmdlist *cmdlist);
-int						process_one_heredoc(t_command *cmd);
+int						process_one_heredoc(t_command *cmd, t_redir *redir);
 int						process_pipeline_heredocs(t_command *cmd);
 void					increment_shlvl(char ***envp);
 char					**copy_env(char **envp);
 char					**append_env(char **envp, char *newvar);
+void					sigint_heredoc_handler(int signo);
+void					install_heredoc_signals(void);
+void					restore_default_signals(void);
+char					*prepare_delim(char *raw, int quoted);
+int						loop_heredoc(int fd, char *delim, int quoted);
+int						cleanup_heredoc(int fd, int status, char *tmpname);
 #endif
-NAME = minishell
-SRCS =  builtin_unset.c env_add_remove.c exec_pipe_utils.c exec_extern.c \
-		lexer_main.c main.c parse_main.c redirection.c token_adv.c cleanup_base.c \
-		heredoc_file.c lexer_buffer.c parse_utils.c parse_andor.c \
-		parse_subshell_collect.c parse_pipeline.c \
-		signals.c exec_main.c utils.c env_utils.c parse_arg.c exec_path_utils.c \
-		token_create.c lexer_collect.c lexer_chars.c exec_pipe.c token_base.c \
-		cleanup_utils.c globbing_read.c lexer_op_1.c lexer_op_2.c \
-		process_line.c utils_and_more.c local_vars.c lexer_expand_var.c token_utils.c token_expand.c \
-		parse_command.c parse_subshell.c parse_subshell_utils.c parse_inter.c \
-		parse_redirection.c exec_fork.c exec_subshell.c exec_redir_setup.c \
-		heredoc_memo.c builtin_base.c builtin_export.c builtin_export_utils.c \
-		builtin_export_arg.c builtin_dispatch.c builtin_exit.c builtin_utils.c env_init.c \
-		env_update.c globbing.c globbing_matches.c param_expand.c expander.c arith.c \
-		exec_line.c bultin_export_utils1.c complete_line.c expander_utils.c expander_utils2.c \
-		utils2.c
-
-
-CC = gcc
-CFLAGS = -Wall -Wextra -Werror
-LIBFT_DIR = ./libft
-LIBFT = $(LIBFT_DIR)/libft.a
-LIBS = -lreadline
-
-all: $(NAME)
-
-$(NAME): $(LIBFT) $(SRCS)
-	$(CC) $(CFLAGS) $(SRCS) -L$(LIBFT_DIR) -lft $(LIBS) -o $(NAME)
-
-$(LIBFT):
-	$(MAKE) -C $(LIBFT_DIR)
-
-clean:
-	rm -f $(NAME)
-	$(MAKE) -C $(LIBFT_DIR) clean
-
-fclean: clean
-	rm -f $(NAME)
-	$(MAKE) -C $(LIBFT_DIR) fclean
-
-re: fclean all
-
-debug: $(NAME)
-	@valgrind --leak-check=full --show-leak-kinds=all --track-fds=yes --track-origins=yes --suppressions=ignore_readline_leaks.supp --log-file="leaks.log" ./minishell
-
-.PHONY: all clean fclean re
